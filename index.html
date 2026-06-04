@@ -1103,7 +1103,7 @@ function saveEdit(roomId, itemId) {
   render();
   // Simpan ke Supabase (kalau bukan temp id)
   if (!String(itemId).startsWith("tmp-")) {
-    sbPatch("dbr_data", itemId, {qty, kondisi, diinput_oleh: currentUser?.nama?.split(",")[0]||"—"})
+    sbPatch("dbr_data", itemId, {qty, kondisi, diinput_oleh: currentUser?.nama?.split(",")[0]||"—"}, "id")
       .then(() => toast("Data berhasil diperbarui!"))
       .catch(e => toast("Gagal update: " + e.message, "red"));
   } else {
@@ -1114,7 +1114,7 @@ function deleteItem(roomId, itemId) {
   ITEMS[roomId] = (ITEMS[roomId]||[]).filter(i=>i.id!==itemId);
   render();
   if (!String(itemId).startsWith("tmp-")) {
-    sbDelete("dbr_data", itemId)
+    sbDelete("dbr_data", itemId, "id")
       .then(() => toast("Barang dihapus."))
       .catch(e => toast("Gagal hapus: " + e.message, "red"));
   } else {
@@ -1247,8 +1247,8 @@ async function sbPost(table, body) {
   return res.json();
 }
 
-async function sbPatch(table, id, body) {
-  const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+async function sbPatch(table, id, body, col="id") {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?${col}=eq.${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: {
       "apikey": SB_KEY,
@@ -1262,8 +1262,8 @@ async function sbPatch(table, id, body) {
   return res.json();
 }
 
-async function sbDelete(table, id) {
-  const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+async function sbDelete(table, id, col="id") {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?${col}=eq.${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: {
       "apikey": SB_KEY,
@@ -1567,8 +1567,8 @@ async function mmSimpan() {
         satuan: document.getElementById("mm-satuan").value.trim() || "Unit",
       };
       if (!body.nama) throw new Error("Nama barang wajib diisi");
-      if (_mmData) {
-        await sbPatch("master_barang", _mmData.id, {nama:body.nama, satuan:body.satuan});
+      if (_mmData && _mmData.id) {
+        await sbPatch("master_barang", _mmData.id, {nama:body.nama, satuan:body.satuan}, "id");
       } else {
         if (!body.kode) throw new Error("Kode barang wajib diisi");
         await sbPost("master_barang", body);
@@ -1583,8 +1583,8 @@ async function mmSimpan() {
         unit:         document.getElementById("mm-unit").value,
       };
       if (!body.nama_ruangan || !body.gedung) throw new Error("Nama ruangan & gedung wajib diisi");
-      if (_mmData) {
-        await sbPatch("master_lokasi", _mmData.id, {gedung:body.gedung,lantai:body.lantai,nama_ruangan:body.nama_ruangan,unit:body.unit});
+      if (_mmData && _mmData.id) {
+        await sbPatch("master_lokasi", _mmData.id, {gedung:body.gedung,lantai:body.lantai,nama_ruangan:body.nama_ruangan,unit:body.unit}, "id");
       } else {
         if (!body.kode_ruangan) throw new Error("Kode ruangan wajib diisi");
         await sbPost("master_lokasi", body);
@@ -1600,8 +1600,9 @@ async function mmSimpan() {
         status:  document.getElementById("mm-status").value,
       };
       if (!body.nip || !body.nama) throw new Error("NIP dan nama wajib diisi");
-      if (_mmData) {
-        await sbPatch("master_pic", _mmData.id, body);
+      if (_mmData && _mmData.id) {
+        const {nip, ...patchBody} = body;
+        await sbPatch("master_pic", _mmData.id, patchBody, "id");
       } else {
         await sbPost("master_pic", body);
       }
@@ -1619,8 +1620,8 @@ async function mmSimpan() {
       };
       if (!body.nip || !body.nama || !body.username) throw new Error("NIP, nama, username wajib diisi");
       if (!_mmData && pwd) body.password_hash = await sha256(pwd);
-      if (_mmData) {
-        await sbPatch("users", _mmData.id, {nama:body.nama,jabatan:body.jabatan,role:body.role,unit:body.unit,status:body.status});
+      if (_mmData && _mmData.id) {
+        await sbPatch("users", _mmData.id, {nama:body.nama,jabatan:body.jabatan,role:body.role,unit:body.unit,status:body.status}, "id");
       } else {
         await sbPost("users", body);
       }
@@ -1657,7 +1658,7 @@ async function mmDeleteUser(id, username) {
   if (username === currentUser?.username) { toast("Tidak bisa hapus akun sendiri!", "red"); return; }
   if (!confirm(`Nonaktifkan user "${username}"?`)) return;
   try {
-    await sbPatch("users", id, {status:"Nonaktif"});
+    await sbPatch("users", id, {status:"Nonaktif"}, "id");
     await loadMasterData();
     render();
     toast("User dinonaktifkan.");
@@ -1723,7 +1724,7 @@ async function cetakPDF(lokasi) {
     </style>
   </head><body>
     <div class="kop">
-      <div class="kop-logo">LOGO<br/>UIN<br/>KEDIRI</div>
+      <img src="images/uin.png" alt="UIN Kediri" style="width:70px;height:70px;object-fit:contain"/>
       <div class="kop-text">
         <h1>UNIVERSITAS ISLAM NEGERI ABDURRAHMAN WAHID KEDIRI</h1>
         <h2>DAFTAR BARANG RUANGAN (DBR)</h2>
@@ -1759,18 +1760,12 @@ async function cetakPDF(lokasi) {
       </tbody>
     </table>
 
-    <div class="ttd">
-      <div class="ttd-box">
-        <div>Mengetahui,</div>
-        <div>Penanggung Jawab</div>
-        <div class="garis">${pic?.nama || "................................"}</div>
-        <div class="nip">NIP. ${pic?.nip || "................................"}</div>
-      </div>
+    <div class="ttd" style="grid-template-columns:1fr;max-width:300px">
       <div class="ttd-box">
         <div>Kediri, ${tgl}</div>
-        <div>Yang Membuat,</div>
-        <div class="garis">${currentUser?.nama?.replace(/,.*$/,"").trim() || "................................"}</div>
-        <div class="nip">NIP. ${currentUser?.nip || "................................"}</div>
+        <div>Penanggung Jawab,</div>
+        <div class="garis">${pic?.nama || "................................"}</div>
+        <div class="nip">NIP. ${pic?.nip || "................................"}</div>
       </div>
     </div>
 
