@@ -54,36 +54,6 @@ sim-dbr/
 
 ---
 
-## Setup
-
-### 1. Supabase
-
-1. Buat project di [supabase.com](https://supabase.com)
-2. Buka **SQL Editor** → paste isi `supabase_schema.sql` → Run
-3. Catat **Project URL** dan **Anon Key** dari Settings → API
-
-### 2. Konfigurasi
-
-Buka `index.html`, cari dan ganti:
-
-```js
-const SB_URL = "https://your-project.supabase.co";
-const SB_KEY = "your-anon-key";
-```
-
-### 3. Deploy
-
-Push ke GitHub → aktifkan **GitHub Pages** di Settings → Pages → Source: `main`
-
-### 4. Login Pertama
-
-Default user sudah tersedia di database (`supabase_schema.sql`):
-
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | *(kosong, isi saat login pertama)* | Super Admin |
-
----
 
 ## Penggunaan
 
