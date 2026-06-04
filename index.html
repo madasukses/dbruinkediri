@@ -256,22 +256,7 @@ table tbody tr{animation:fadeInFast .15s ease}
     </div>
     <div class="login-h">Selamat Datang</div>
     <p class="login-sub">Masuk untuk mengelola inventaris aset</p>
-    <div class="fg">
-      <label>Login Sebagai</label>
-      <select class="fi" id="inp-role" onchange="onRoleChange()">
-        <option value="superadmin">Super Admin — Bag. Umum</option>
-        <optgroup label="Admin Fakultas">
-          <option value="admin_rektorat">Admin — Rektorat</option>
-          <option value="admin_syariah">Admin — Fak. Syariah</option>
-          <option value="admin_febi">Admin — FEBI</option>
-          <option value="admin_tarbiyah">Admin — Fak. Tarbiyah</option>
-          <option value="admin_ushuludin">Admin — Fak. Ushuludin</option>
-          <option value="admin_pascasarjana">Admin — Pascasarjana</option>
-          <option value="admin_perpustakaan">Admin — Perpustakaan</option>
-          <option value="admin_mahad">Admin — Mahad</option>
-        </optgroup>
-      </select>
-    </div>
+
     <div class="fg" id="wrap-username">
       <label>Username</label>
       <input class="fi" id="inp-username" placeholder="Username"/>
@@ -368,18 +353,7 @@ const MASTER_BARANG = [
 
 const UNITS = ["Rektorat","Kampus 1","Fak. Syariah","Pascasarjana","Perpustakaan","FEBI","Fak. Ushuludin","Mahad","Fak. Tarbiyah"];
 
-// User → unit mapping
-const ROLE_UNIT = {
-  superadmin: null,
-  admin_rektorat: "Rektorat",
-  admin_syariah: "Fak. Syariah",
-  admin_febi: "FEBI",
-  admin_tarbiyah: "Fak. Tarbiyah",
-  admin_ushuludin: "Fak. Ushuludin",
-  admin_pascasarjana: "Pascasarjana",
-  admin_perpustakaan: "Perpustakaan",
-  admin_mahad: "Mahad",
-};
+
 
 const USERS_SUPERADMIN = [
   {id:1,nip:"197001012000031001",nama:"Dr. H. Ahmad Fauzi, M.Ag",jabatan:"Kepala Bagian Umum",unit:"Bagian Umum",role:"superadmin"},
@@ -449,14 +423,14 @@ function loadSession() {
 }
 function saveSession() {
   localStorage.setItem("simdbr_session", JSON.stringify({
-    currentRole, currentUnit, currentUser, page, token: AUTH_TOKEN
+    currentRole, currentUnit, currentUser, page
   }));
-  if (AUTH_TOKEN) localStorage.setItem("simdbr_token", AUTH_TOKEN);
+  
 }
 function clearSession() {
   localStorage.removeItem("simdbr_session");
   localStorage.removeItem("simdbr_token");
-  AUTH_TOKEN = "";
+  
 }
 
 const _sess = loadSession();
@@ -518,27 +492,46 @@ function condBadge(k) {
 // ══════════════════════════════════════════════════════
 // AUTH
 // ══════════════════════════════════════════════════════
-function onRoleChange() {
-  const role = document.getElementById("inp-role").value;
-  // Show username for all — different users per unit
+
+
+async function doLogin() {
+  const username = document.getElementById("inp-username").value.trim();
+  const password = document.getElementById("inp-password").value;
+  if (!username || !password) { showLoginError("Username dan password wajib diisi"); return; }
+
+  const btn = document.querySelector(".login-box .btn-primary");
+  if (btn) { btn.textContent = "Memuat..."; btn.disabled = true; }
+
+  try {
+    const user = await sbLogin(username, password);
+    currentRole = user.role;
+    currentUnit = (user.unit === "Bagian Umum") ? null : user.unit;
+    currentUser = user;
+    applyUserUI();
+    document.getElementById("login-page").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+    document.getElementById("topbar-date").textContent = new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+    page = "dashboard"; selGedung=null; selRoom=null;
+    saveSession();
+    render();
+    loadMasterData();
+  } catch(e) {
+    showLoginError(e.message || "Login gagal");
+  } finally {
+    if (btn) { btn.textContent = "Masuk →"; btn.disabled = false; }
+  }
 }
 
-function doLogin() {
-  const role = document.getElementById("inp-role").value;
-  const uname = document.getElementById("inp-username").value || "admin";
-  currentRole = role;
-  currentUnit = ROLE_UNIT[role];
-
-  // Set user display
-  applyUserUI();
-
-  document.getElementById("login-page").style.display = "none";
-  document.getElementById("app").style.display = "flex";
-  document.getElementById("topbar-date").textContent = new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
-  page = "dashboard"; selGedung=null; selRoom=null;
-  saveSession();
-  render();
-  loadMasterData();
+function showLoginError(msg) {
+  let el = document.getElementById("login-error");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "login-error";
+    el.style.cssText = "background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#F87171;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;";
+    document.querySelector(".login-box .btn-primary").before(el);
+  }
+  el.textContent = "⚠️ " + msg;
+  setTimeout(() => el && (el.textContent = ""), 4000);
 }
 
 function doLogout() {
@@ -990,7 +983,7 @@ function renderInput() {
               const q=ri.reduce((s,i)=>s+i.qty,0);
               const hasRusak=ri.some(i=>i.kondisi==="Rusak");
               const hasPerbaikan=ri.some(i=>i.kondisi==="Perbaikan");
-              return `<div class="list-item" onclick="selRoom=${JSON.stringify(r).replace(/"/g,'&quot;')};editingId=null;addOpen=false;render()">
+              return `<div class="list-item" onclick="selectRoom(${JSON.stringify(r).replace(/'/g,'\'').replace(/"/g,'&quot;')})">
                 <div><div class="li-name">${r.nama}</div><div class="li-meta">${r.lantai}</div></div>
                 <div style="display:flex;gap:5px">
                   <span class="badge b-blue">${q} unit</span>
@@ -1044,16 +1037,36 @@ function doAdd(roomId) {
   const kondisi = document.getElementById("add-cond")?.value || "Baik";
   if (!nama) { toast("Nama barang harus diisi!", "red"); return; }
   if (!["Baik","Perbaikan","Rusak"].includes(kondisi)) { toast("Kondisi tidak valid!", "red"); return; }
+
+  // Optimistic update UI dulu
   if (!ITEMS[roomId]) ITEMS[roomId] = [];
-  ITEMS[roomId].push({
-    id: Date.now(), nama, qty, kondisi,
-    updatedBy: currentUser ? currentUser.nama.split(",")[0] : "—",
-    updatedAt: now()
-  });
-  newItem  = {nama:"", qty:1, kondisi:"Baik"};
-  addOpen  = false;
+  const tempId = "tmp-" + Date.now();
+  ITEMS[roomId].push({id:tempId, nama, qty, kondisi, diinput_oleh: currentUser?.nama?.split(",")[0]||"—", updated_at:now()});
+  newItem = {nama:"", qty:1, kondisi:"Baik"};
+  addOpen = false;
   render();
-  toast("Barang berhasil ditambahkan!");
+
+  // Simpan ke Supabase
+  const lokasiRow = LOKASI_DATA.find(l => l.id === roomId) || LOKASI.find(l => l.id === roomId);
+  const kodeRuangan = lokasiRow?.kode_ruangan;
+  if (!kodeRuangan) { toast("Kode ruangan tidak ditemukan!", "red"); return; }
+
+  sbPost("dbr_data", {
+    kode_ruangan: kodeRuangan, nama_barang: nama, qty, kondisi,
+    diinput_oleh: currentUser?.nama?.split(",")[0]||"—",
+    tahun: new Date().getFullYear().toString()
+  }).then(rows => {
+    // Ganti tempId dengan ID asli dari Supabase
+    if (rows && rows[0]) {
+      const real = rows[0];
+      ITEMS[roomId] = ITEMS[roomId].map(i => i.id===tempId ? {...i, id:real.id, kode_ruangan:real.kode_ruangan} : i);
+    }
+    toast("Barang berhasil disimpan!");
+  }).catch(e => {
+    ITEMS[roomId] = ITEMS[roomId].filter(i => i.id !== tempId);
+    render();
+    toast("Gagal menyimpan: " + e.message, "red");
+  });
 }
 
 function startEdit(itemId) {
@@ -1068,16 +1081,29 @@ function saveEdit(roomId, itemId) {
   const qty = +document.getElementById("edit-qty")?.value || 1;
   const kondisi = document.getElementById("edit-cond")?.value || "Baik";
   ITEMS[roomId] = ITEMS[roomId].map(i =>
-    i.id===itemId ? {...i, qty, kondisi, updatedBy: currentUser.nama.split(",")[0], updatedAt: now()} : i
+    i.id===itemId ? {...i, qty, kondisi, diinput_oleh: currentUser?.nama?.split(",")[0]||"—", updated_at:now()} : i
   );
   editingId = null;
   render();
-  toast("Data berhasil diperbarui!");
+  // Simpan ke Supabase (kalau bukan temp id)
+  if (!String(itemId).startsWith("tmp-")) {
+    sbPatch("dbr_data", itemId, {qty, kondisi, diinput_oleh: currentUser?.nama?.split(",")[0]||"—"})
+      .then(() => toast("Data berhasil diperbarui!"))
+      .catch(e => toast("Gagal update: " + e.message, "red"));
+  } else {
+    toast("Data berhasil diperbarui!");
+  }
 }
 function deleteItem(roomId, itemId) {
   ITEMS[roomId] = (ITEMS[roomId]||[]).filter(i=>i.id!==itemId);
   render();
-  toast("Barang dihapus.");
+  if (!String(itemId).startsWith("tmp-")) {
+    sbDelete("dbr_data", itemId)
+      .then(() => toast("Barang dihapus."))
+      .catch(e => toast("Gagal hapus: " + e.message, "red"));
+  } else {
+    toast("Barang dihapus.");
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1159,63 +1185,138 @@ function renderLaporan() {
 // INIT
 // ══════════════════════════════════════════════════════
 
-// ── API CONFIG ───────────────────────────────────────────────────────────────
-const API_URL = "https://script.google.com/macros/s/AKfycbwY-e5LREglUWOGmIZoclhpJE49TD8B3nsD6Fznmt1iN-Zac71gFS24W7vvvQh0u0s11g/exec";
-// AUTH_TOKEN: cek dari session dulu (lebih reliable), fallback ke simdbr_token
-let AUTH_TOKEN = (() => {
-  try {
-    const s = JSON.parse(localStorage.getItem("simdbr_session") || "null");
-    if (s && s.token) return s.token;
-  } catch(_) {}
-  return localStorage.getItem("simdbr_token") || "";
-})();
+// ── SUPABASE CONFIG ──────────────────────────────────────────
+const SB_URL = "https://xmarkqyjobsmamcwehqq.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtYXJrcXlqb2JzbWFtY3dlaHFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NjM1NTMsImV4cCI6MjA5NjEzOTU1M30.uTzOuiRjBTcmKDGWiVtj_itvS-6IsXa5gOhaLfoCe-M";
 
-// ── MASTER DATA (dari GSheet) ─────────────────────────
-// Awalnya pakai data lokal, di-replace setelah fetch berhasil
-let PICS_DATA    = [...PICS];    // akan di-overwrite dari GSheet
-let USERS_DATA   = [];           // akan di-overwrite dari GSheet
-let LOKASI_DATA  = [...LOKASI];  // akan di-overwrite dari GSheet
+// Helper fetch ke Supabase REST API
+async function sbGet(table, params = {}) {
+  const qs = new URLSearchParams(params);
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?${qs}`, {
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": "Bearer " + SB_KEY,
+      "Content-Type": "application/json",
+    }
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function sbPost(table, body) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
+    method: "POST",
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": "Bearer " + SB_KEY,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation",
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function sbPatch(table, id, body) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: "PATCH",
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": "Bearer " + SB_KEY,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation",
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function sbDelete(table, id) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: "DELETE",
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": "Bearer " + SB_KEY,
+    }
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return true;
+}
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function sbLogin(username, password) {
+  const hash = await sha256(password);
+  const rows = await sbGet("users", {
+    username: `eq.${username}`,
+    status: "eq.Aktif",
+    select: "nip,nama,jabatan,unit,role,username,password_hash"
+  });
+  if (!rows || rows.length === 0) throw new Error("Username tidak ditemukan");
+  const user = rows[0];
+  // Kalau password_hash kosong (setup awal), langsung set
+  if (!user.password_hash) {
+    await fetch(`${SB_URL}/rest/v1/users?username=eq.${username}`, {
+      method: "PATCH",
+      headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json"},
+      body: JSON.stringify({password_hash: hash})
+    });
+  } else if (user.password_hash !== hash) {
+    throw new Error("Password salah");
+  }
+  return {nip:user.nip, nama:user.nama, jabatan:user.jabatan, unit:user.unit, role:user.role, username:user.username};
+}
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+// ── MASTER DATA dari Supabase ─────────────────────────────────
+let PICS_DATA   = [...PICS];
+let USERS_DATA  = [];
+let LOKASI_DATA = [...LOKASI];
+let BARANG_DATA = [...MASTER_BARANG.map((n,i) => ({kode:`BRG-${String(i+1).padStart(3,"0")}`,nama:n,satuan:"Unit"}))];
+let DBR_DATA    = {};  // kode_ruangan -> array items
 
 async function loadMasterData() {
-  if (!AUTH_TOKEN) return;
   try {
-    // Fetch paralel
-    const [picRes, lokasiRes] = await Promise.all([
-      apiGet("getMasterPic"),
-      apiGet("getMasterLokasi"),
+    const [lokasi, pic, barang] = await Promise.all([
+      sbGet("master_lokasi", {select:"*", order:"kode_ruangan", limit:"500"}),
+      sbGet("master_pic",    {select:"*", order:"unit"}),
+      sbGet("master_barang", {select:"*", order:"kode"}),
     ]);
-    if (picRes && picRes.length)    PICS_DATA   = picRes;
-    if (lokasiRes && lokasiRes.length) LOKASI_DATA = lokasiRes;
+    if (lokasi?.length) LOKASI_DATA = lokasi;
+    if (pic?.length)    PICS_DATA   = pic;
+    if (barang?.length) BARANG_DATA = barang;
 
-    // Superadmin juga fetch users
-    if (currentRole === "superadmin") {
-      const usersRes = await apiGet("getUsers");
-      if (usersRes && usersRes.length) USERS_DATA = usersRes;
+    if (currentRole === "superadmin" || currentRole === "bmn") {
+      const users = await sbGet("users", {
+        select:"id,nip,nama,jabatan,unit,role,username,status",
+        order:"unit"
+      });
+      if (users?.length) USERS_DATA = users;
     }
 
-    // Re-render kalau sudah di halaman yang relevan
-    if (["m-pic","m-lokasi","m-user","dashboard"].includes(page)) render();
+    if (["m-pic","m-lokasi","m-user","m-barang","dashboard"].includes(page)) render();
   } catch(e) {
-    console.warn("loadMasterData gagal, pakai data lokal:", e.message);
+    console.warn("loadMasterData error:", e.message);
   }
 }
 
-async function apiGet(action, params={}) {
-  const qs = new URLSearchParams({action, token:AUTH_TOKEN, ...params});
-  const res = await fetch(API_URL + "?" + qs);
-  const json = await res.json();
-  if(json.status==="error") throw new Error(json.message);
-  return json.data;
-}
-
-async function apiPost(action, body={}) {
-  const res = await fetch(API_URL, {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action, token:AUTH_TOKEN, ...body})
-  });
-  const json = await res.json();
-  if(json.status==="error") throw new Error(json.message);
-  return json.data;
+async function loadDBRForRoom(kodeRuangan) {
+  try {
+    const rows = await sbGet("dbr_data", {
+      kode_ruangan: `eq.${kodeRuangan}`,
+      select: "*",
+      order: "created_at"
+    });
+    DBR_DATA[kodeRuangan] = rows || [];
+  } catch(e) {
+    DBR_DATA[kodeRuangan] = [];
+    console.warn("loadDBR error:", e.message);
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1256,25 +1357,82 @@ function apSelect(val) {
   setTimeout(() => document.getElementById("ap-qty").focus(), 30);
 }
 
-function apSimpan() {
+async function apSimpan() {
   const nama    = document.getElementById("ap-nama").value.trim();
   const qty     = +document.getElementById("ap-qty").value  || 1;
   const kondisi = document.getElementById("ap-cond").value;
-  if (!nama)    { toast("Nama barang harus diisi!", "red"); return; }
+  if (!nama)      { toast("Nama barang harus diisi!", "red"); return; }
   if (!_apRoomId) { toast("Room tidak dikenali!", "red"); return; }
-  if (!ITEMS[_apRoomId]) ITEMS[_apRoomId] = [];
-  ITEMS[_apRoomId].push({
-    id: Date.now(), nama, qty, kondisi,
-    updatedBy: currentUser ? currentUser.nama.split(",")[0] : "—",
-    updatedAt: now()
-  });
-  closeAddPanel();
-  render();
-  toast("Barang berhasil ditambahkan!");
+
+  const lok = LOKASI_DATA.find(l => l.id === _apRoomId) || LOKASI.find(l=>l.id===_apRoomId);
+  const kodeRuangan = lok?.kode_ruangan;
+  if (!kodeRuangan) { toast("Kode ruangan tidak ditemukan!", "red"); return; }
+
+  const btn = document.querySelector("#add-panel .btn-green");
+  if (btn) { btn.textContent = "Menyimpan..."; btn.disabled = true; }
+
+  try {
+    const rows = await sbPost("dbr_data", {
+      kode_ruangan: kodeRuangan, nama_barang: nama, qty, kondisi,
+      diinput_oleh: currentUser?.nama?.split(",")[0]||"—",
+      tahun: new Date().getFullYear().toString()
+    });
+    if (!ITEMS[_apRoomId]) ITEMS[_apRoomId] = [];
+    if (rows && rows[0]) {
+      const r = rows[0];
+      ITEMS[_apRoomId].push({
+        id:r.id, nama:r.nama_barang, qty:r.qty, kondisi:r.kondisi,
+        diinput_oleh:r.diinput_oleh, updated_at:r.updated_at?.split("T")[0]||"",
+        kode_ruangan:r.kode_ruangan
+      });
+    }
+    closeAddPanel();
+    render();
+    toast("Barang berhasil disimpan!");
+  } catch(e) {
+    toast("Gagal simpan: " + e.message, "red");
+  } finally {
+    if (btn) { btn.textContent = "+ Simpan"; btn.disabled = false; }
+  }
 }
 
 window.selRoom   = null;
 window.editingId = null;
+
+// ── SELECT ROOM (load data dari Supabase) ────────────────────
+async function selectRoom(room) {
+  selRoom = room;
+  editingId = null;
+  addOpen = false;
+  render(); // render dulu dengan loading state
+
+  // Load dari Supabase
+  const lok = LOKASI_DATA.find(l => l.id === room.id) || room;
+  const kode = lok.kode_ruangan;
+  if (kode) {
+    try {
+      const rows = await sbGet("dbr_data", {
+        kode_ruangan: `eq.${kode}`,
+        select: "*",
+        order: "created_at"
+      });
+      // Map ke format ITEMS pakai id numerik dari room
+      ITEMS[room.id] = (rows || []).map(r => ({
+        id:           r.id,
+        nama:         r.nama_barang,
+        qty:          r.qty,
+        kondisi:      r.kondisi,
+        diinput_oleh: r.diinput_oleh,
+        updated_at:   r.updated_at?.split("T")[0] || "",
+        keterangan:   r.keterangan || "",
+        kode_ruangan: r.kode_ruangan,
+      }));
+      render();
+    } catch(e) {
+      console.warn("Load DBR error:", e.message);
+    }
+  }
+}
 
 // ── SIDEBAR TOGGLE ────────────────────────────────────
 function toggleSidebar() {
