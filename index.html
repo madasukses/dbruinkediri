@@ -226,6 +226,28 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 select option{background:#1E293B;color:#F8FAFC}
 
+/* ── MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:center;justify-content:center;animation:fadeInFast .15s}
+.modal{background:var(--navy2);border:1px solid var(--border);border-radius:16px;padding:28px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5);animation:slideUp .2s ease}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:0;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal .fg{margin-bottom:14px}
+.modal .fg label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.modal .fg input,.modal .fg select,.modal .fg textarea{width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font);color:var(--text);outline:none}
+.modal .fg input:focus,.modal .fg select:focus{border-color:var(--accent)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* ── SEARCH BAR ── */
+.search-bar{display:flex;align-items:center;gap:8px;padding:10px 18px;border-bottom:1px solid var(--border);background:var(--surface)}
+.search-input{flex:1;padding:8px 12px;background:var(--navy);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);color:var(--text);outline:none}
+.search-input:focus{border-color:var(--accent)}
+
+/* ── ADD PANEL (modal center) ── */
+#add-panel .modal{width:420px}
+body.light .modal{background:#FFFFFF}
+body.light .modal .fg input,body.light .modal .fg select{background:#F8FAFC;color:#0F172A}
+
 @keyframes slideUpPanel{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
 /* ── SMOOTH TRANSITIONS ── */
 .content{transition:opacity .15s ease}
@@ -356,21 +378,9 @@ const UNITS = ["Rektorat","Kampus 1","Fak. Syariah","Pascasarjana","Perpustakaan
 
 
 
-const USERS_SUPERADMIN = [
-  {id:1,nip:"197001012000031001",nama:"Dr. H. Ahmad Fauzi, M.Ag",jabatan:"Kepala Bagian Umum",unit:"Bagian Umum",role:"superadmin"},
-  {id:2,nip:"198203152005012002",nama:"Siti Rahmawati, S.E.",jabatan:"Staf BMN",unit:"Bagian Umum",role:"superadmin"},
-  {id:3,nip:"197805202003121003",nama:"Hendra Kusuma, S.Kom",jabatan:"Staf BMN",unit:"Bagian Umum",role:"superadmin"},
-  {id:4,nip:"198601102009012004",nama:"Nurul Hidayah, A.Md",jabatan:"Staf BMN",unit:"Bagian Umum",role:"superadmin"},
-  {id:5,nip:"197912252004121005",nama:"Bambang Santoso",jabatan:"Staf BMN",unit:"Bagian Umum",role:"superadmin"},
-];
 
-const ADMIN_FAKULTAS = [
-  {id:6,nip:"198504182010012006",nama:"Fatimah Azzahra, S.H.",jabatan:"Admin Inventaris",unit:"Fak. Syariah",role:"admin_syariah"},
-  {id:7,nip:"197706302002121007",nama:"H. Ridwan, S.Ag.",jabatan:"Admin Inventaris",unit:"FEBI",role:"admin_febi"},
-  {id:8,nip:"199001152015031008",nama:"Anwar Sanusi, A.Md",jabatan:"Admin Inventaris",unit:"Fak. Tarbiyah",role:"admin_tarbiyah"},
-  {id:9,nip:"198801012012011009",nama:"Dewi Lestari, S.E.",jabatan:"Admin Inventaris",unit:"Fak. Ushuludin",role:"admin_ushuludin"},
-  {id:10,nip:"199203042017011010",nama:"Rizky Pratama",jabatan:"Admin Inventaris",unit:"Rektorat",role:"admin_rektorat"},
-];
+
+
 
 const PICS = [
   {id:1,nip:"197001012000031001",nama:"Dr. H. Ahmad Fauzi, M.Ag",jabatan:"Kasub Bag Umum",unit:"Rektorat"},
@@ -721,20 +731,28 @@ function renderDashboard() {
 // ══════════════════════════════════════════════════════
 function renderMBarang() {
   setBread(["Master Data","Barang"]);
-  const readonly = !isSuperAdmin();
+  const data = BARANG_DATA.length ? BARANG_DATA : MASTER_BARANG.map((n,i)=>({kode:`BRG-${String(i+1).padStart(3,"0")}`,nama:n,satuan:"Unit"}));
   return `
-  <div class="ph"><div class="ph-left"><div class="ph-title">Master Barang</div><div class="ph-sub">${MASTER_BARANG.length} jenis barang · Kode readonly</div></div>
-    ${isSuperAdmin()?`<button class="btn btn-primary btn-sm">+ Tambah Jenis Barang</button>`:""}
+  <div class="ph">
+    <div class="ph-left"><div class="ph-title">Master Barang</div><div class="ph-sub">${data.length} jenis barang</div></div>
+    ${isSuperAdmin()?`<button class="btn btn-primary btn-sm" onclick="mmOpen('barang',null)">+ Tambah Barang</button>`:""}
   </div>
-  ${readonly?`<div class="denied">🔒 Kamu hanya bisa melihat master barang. Perubahan dilakukan oleh Super Admin.</div>`:""}
+  ${!isSuperAdmin()?`<div class="denied">🔒 Hanya Super Admin yang dapat mengubah master barang.</div>`:""}
   <div class="card">
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>#</th><th>Kode</th><th>Nama Barang</th><th>Satuan</th></tr></thead>
-      <tbody>${MASTER_BARANG.map((n,i)=>`<tr>
+    <div class="search-bar">
+      <input class="search-input" placeholder="🔍 Cari nama barang..." oninput="filterTable(this,'tbl-barang')"/>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-barang">
+      <thead><tr><th>#</th><th>Kode</th><th>Nama Barang</th><th>Satuan</th>${isSuperAdmin()?"<th>Aksi</th>":""}</tr></thead>
+      <tbody>${data.map((b,i)=>`<tr>
         <td class="mono">${i+1}</td>
-        <td><span class="badge b-blue" style="font-family:var(--mono)">BRG-${String(i+1).padStart(3,"0")}</span></td>
-        <td style="font-weight:500">${n}</td>
-        <td><span class="badge b-purple">Unit</span></td>
+        <td><span class="badge b-blue" style="font-family:var(--mono)">${b.kode}</span></td>
+        <td style="font-weight:500">${b.nama}</td>
+        <td><span class="badge b-purple">${b.satuan||"Unit"}</span></td>
+        ${isSuperAdmin()?`<td><div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="mmOpen('barang',${JSON.stringify(b).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="btn btn-red btn-sm btn-icon" onclick="mmDelete('master_barang','${b.kode}','kode')">🗑</button>
+        </div></td>`:""}
       </tr>`).join("")}</tbody>
     </table></div>
   </div>`;
@@ -747,19 +765,27 @@ function renderMLokasi() {
   setBread(["Master Data","Lokasi"]);
   const filtered = currentUnit ? LOKASI_DATA.filter(l=>l.unit===currentUnit) : LOKASI_DATA;
   return `
-  <div class="ph"><div class="ph-left"><div class="ph-title">Master Lokasi</div><div class="ph-sub">${filtered.length} ruangan${currentUnit?" di "+currentUnit:""} (sample)</div></div>
-    ${isSuperAdmin()?`<button class="btn btn-primary btn-sm">+ Tambah Ruangan</button>`:""}
+  <div class="ph">
+    <div class="ph-left"><div class="ph-title">Master Lokasi</div><div class="ph-sub">${filtered.length} ruangan${currentUnit?" di "+currentUnit:""}</div></div>
+    ${isSuperAdmin()?`<button class="btn btn-primary btn-sm" onclick="mmOpen('lokasi',null)">+ Tambah Ruangan</button>`:""}
   </div>
   <div class="card">
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>#</th><th>Kode</th><th>Gedung</th><th>Lantai</th><th>Nama Ruangan</th><th>Unit</th></tr></thead>
+    <div class="search-bar">
+      <input class="search-input" placeholder="🔍 Cari nama ruangan, gedung..." oninput="filterTable(this,'tbl-lokasi')"/>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-lokasi">
+      <thead><tr><th>#</th><th>Kode</th><th>Gedung</th><th>Lantai</th><th>Nama Ruangan</th><th>Unit</th><th>Aksi</th></tr></thead>
       <tbody>${filtered.map((l,i)=>`<tr>
         <td class="mono">${i+1}</td>
-        <td class="mono">${l.unit.substring(0,3).toUpperCase().replace("FAK","FSY")}-${String(l.id).padStart(3,"0")}</td>
+        <td class="mono">${l.kode_ruangan||""}</td>
         <td style="font-weight:500">${l.gedung}</td>
         <td>${l.lantai}</td>
-        <td style="font-weight:600">${l.nama}</td>
+        <td style="font-weight:600">${l.nama_ruangan||l.nama||""}</td>
         <td><span class="badge b-purple">${l.unit}</span></td>
+        <td><div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="mmOpen('lokasi',${JSON.stringify(l).replace(/"/g,'&quot;')})">✏️</button>
+          ${isSuperAdmin()?`<button class="btn btn-red btn-sm btn-icon" onclick="mmDelete('master_lokasi','${l.kode_ruangan}','kode_ruangan')">🗑</button>`:""}
+        </div></td>
       </tr>`).join("")}</tbody>
     </table></div>
   </div>`;
@@ -772,19 +798,27 @@ function renderMPic() {
   setBread(["Master Data","PIC / Kasub Bag"]);
   const filtered = currentUnit ? PICS_DATA.filter(p=>p.unit===currentUnit) : PICS_DATA;
   return `
-  <div class="ph"><div class="ph-left"><div class="ph-title">Master PIC</div><div class="ph-sub">Tampil sebagai tanda tangan pada dokumen DBR</div></div>
-    ${isSuperAdmin()?`<button class="btn btn-primary btn-sm">+ Tambah PIC</button>`:""}
+  <div class="ph">
+    <div class="ph-left"><div class="ph-title">Master PIC</div><div class="ph-sub">Nama PIC tampil sebagai tanda tangan pada dokumen DBR</div></div>
+    <button class="btn btn-primary btn-sm" onclick="mmOpen('pic',null)">+ Tambah PIC</button>
   </div>
   <div class="card">
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>#</th><th>NIP</th><th>Nama Lengkap</th><th>Jabatan</th><th>Unit</th><th>Status</th></tr></thead>
+    <div class="search-bar">
+      <input class="search-input" placeholder="🔍 Cari nama, NIP, unit..." oninput="filterTable(this,'tbl-pic')"/>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-pic">
+      <thead><tr><th>#</th><th>NIP</th><th>Nama Lengkap</th><th>Jabatan</th><th>Unit</th><th>Status</th><th>Aksi</th></tr></thead>
       <tbody>${filtered.map((p,i)=>`<tr>
         <td class="mono">${i+1}</td>
         <td class="mono">${p.nip}</td>
         <td style="font-weight:600">${p.nama}</td>
-        <td style="color:var(--text2)">${p.jabatan}</td>
+        <td style="color:var(--text2)">${p.jabatan||"—"}</td>
         <td><span class="badge b-purple">${p.unit}</span></td>
-        <td><span class="badge b-green">Aktif</span></td>
+        <td><span class="badge ${p.status==="Aktif"?"b-green":"b-red"}">${p.status||"Aktif"}</span></td>
+        <td><div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="mmOpen('pic',${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="btn btn-red btn-sm btn-icon" onclick="mmDelete('master_pic',${p.id},'id')">🗑</button>
+        </div></td>
       </tr>`).join("")}</tbody>
     </table></div>
   </div>`;
@@ -793,33 +827,7 @@ function renderMPic() {
 // ══════════════════════════════════════════════════════
 // MASTER BMN
 // ══════════════════════════════════════════════════════
-function renderMBmn() {
-  if(!isSuperAdmin()) { setBread(["Master Data","Anggota BMN"]); return `<div class="denied">🔒 Hanya Super Admin yang dapat mengakses menu ini.</div>`; }
-  setBread(["Master Data","Anggota BMN"]);
-  return `
-  <div class="ph"><div class="ph-left"><div class="ph-title">Anggota BMN</div><div class="ph-sub">Petugas Barang Milik Negara — Bagian Umum (maks. 5 orang)</div></div>
-    <button class="btn btn-primary btn-sm">+ Tambah Anggota</button>
-  </div>
-  <div class="card">
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>#</th><th>NIP</th><th>Nama Lengkap</th><th>Jabatan</th><th>Unit</th><th>Aksi</th></tr></thead>
-      <tbody>${USERS_SUPERADMIN.map((u,i)=>`<tr>
-        <td class="mono">${i+1}</td>
-        <td class="mono">${u.nip}</td>
-        <td style="font-weight:600">${u.nama}</td>
-        <td style="color:var(--text2)">${u.jabatan}</td>
-        <td><span class="badge b-amber">${u.unit}</span></td>
-        <td><div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm btn-icon">✏️</button>
-          ${i>0?`<button class="btn btn-red btn-sm btn-icon">🗑</button>`:`<button class="btn btn-ghost btn-sm btn-icon" disabled style="opacity:.3">🗑</button>`}
-        </div></td>
-      </tr>`).join("")}</tbody>
-    </table></div>
-    <div style="padding:12px 18px;font-size:12px;color:var(--text3);border-top:1px solid var(--border)">
-      ${USERS_SUPERADMIN.length}/5 slot terisi
-    </div>
-  </div>`;
-}
+
 
 // ══════════════════════════════════════════════════════
 // MASTER USER (ADMIN FAKULTAS)
@@ -827,25 +835,34 @@ function renderMBmn() {
 function renderMUser() {
   if(!isSuperAdmin()) return `<div class="denied">🔒 Hanya Super Admin yang dapat mengakses menu ini.</div>`;
   setBread(["Master Data","Users"]);
+  const roleLabel = {superadmin:"Super Admin",admin_fakultas:"Admin Fakultas"};
+  const roleBadge = {superadmin:"b-amber",admin_fakultas:"b-blue"};
   return `
-  <div class="ph"><div class="ph-left"><div class="ph-title">Users — Admin Fakultas</div><div class="ph-sub">Akun admin per unit / fakultas</div></div>
-    <button class="btn btn-primary btn-sm">+ Tambah User</button>
+  <div class="ph">
+    <div class="ph-left"><div class="ph-title">Manajemen User</div><div class="ph-sub">Semua pengguna sistem — Bagian Umum & Admin Fakultas</div></div>
+    <button class="btn btn-primary btn-sm" onclick="mmOpen('user',null)">+ Tambah User</button>
   </div>
   <div class="card">
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>#</th><th>NIP</th><th>Nama</th><th>Jabatan</th><th>Unit / Akses</th><th>Role</th><th>Aksi</th></tr></thead>
-      <tbody>${USERS_DATA.map((u,i)=>`<tr>
-        <td class="mono">${i+1}</td>
-        <td class="mono">${u.nip}</td>
-        <td style="font-weight:600">${u.nama}</td>
-        <td style="color:var(--text2)">${u.jabatan}</td>
-        <td><span class="badge b-purple">${u.unit}</span></td>
-        <td><span class="badge b-blue">Admin Fakultas</span></td>
-        <td><div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm btn-icon">✏️</button>
-          <button class="btn btn-red btn-sm btn-icon">🗑</button>
-        </div></td>
-      </tr>`).join("")}</tbody>
+    <div class="search-bar">
+      <input class="search-input" placeholder="🔍 Cari nama, NIP, username..." oninput="filterTable(this,'tbl-user')"/>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-user">
+      <thead><tr><th>#</th><th>NIP</th><th>Nama</th><th>Username</th><th>Unit</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody>${USERS_DATA.length===0?`<tr><td colspan="8"><div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">Belum ada data user. Klik Muat Ulang.</div></div></td></tr>`:
+        USERS_DATA.map((u,i)=>`<tr>
+          <td class="mono">${i+1}</td>
+          <td class="mono" style="font-size:11px">${u.nip}</td>
+          <td style="font-weight:600">${u.nama}</td>
+          <td class="mono">${u.username}</td>
+          <td><span class="badge b-purple">${u.unit}</span></td>
+          <td><span class="badge ${roleBadge[u.role]||"b-blue"}">${roleLabel[u.role]||u.role}</span></td>
+          <td><span class="badge ${u.status==="Aktif"?"b-green":"b-red"}">${u.status}</span></td>
+          <td><div style="display:flex;gap:5px">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="mmOpen('user',${JSON.stringify(u).replace(/"/g,'&quot;')})">✏️</button>
+            <button class="btn btn-red btn-sm btn-icon" onclick="mmDeleteUser(${u.id},'${u.username}')">🗑</button>
+          </div></td>
+        </tr>`).join("")}
+      </tbody>
     </table></div>
   </div>`;
 }
@@ -1145,41 +1162,54 @@ function renderPindah() {
 // ══════════════════════════════════════════════════════
 function renderLaporan() {
   setBread(["Laporan DBR"]);
-  const filtered = currentUnit ? LOKASI_DATA.filter(l=>l.unit===currentUnit) : LOKASI_DATA;
+  const all = currentUnit ? LOKASI_DATA.filter(l=>l.unit===currentUnit) : LOKASI_DATA;
   return `
   <div class="ph">
-    <div class="ph-left"><div class="ph-title">Laporan DBR</div><div class="ph-sub">Rekap inventaris per ruangan</div></div>
-    <div style="display:flex;gap:8px">
-      ${isSuperAdmin()?`<select class="fi" style="width:auto"><option>Semua Unit</option>${UNITS.map(u=>`<option>${u}</option>`).join("")}</select>`:""}
-      <select class="fi" style="width:auto"><option>2025</option><option>2024</option></select>
-      <button class="btn btn-primary btn-sm" onclick="toast('Export PDF diproses...')">📄 Export Semua</button>
-    </div>
+    <div class="ph-left"><div class="ph-title">Laporan DBR</div><div class="ph-sub">Rekap inventaris per ruangan · klik PDF untuk cetak</div></div>
   </div>
   <div class="card">
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>#</th><th>Nama Ruangan</th><th>Gedung</th><th>Unit</th><th>PIC</th><th>Total</th><th>Baik</th><th>Perbaikan</th><th>Rusak</th><th>Aksi</th></tr></thead>
-      <tbody>${filtered.map((l,i)=>{
-        const ri=roomItems(l.id);
-        const q=ri.reduce((s,x)=>s+x.qty,0);
-        const b=ri.filter(x=>x.kondisi==="Baik").reduce((s,x)=>s+x.qty,0);
-        const p=ri.filter(x=>x.kondisi==="Perbaikan").reduce((s,x)=>s+x.qty,0);
-        const r=ri.filter(x=>x.kondisi==="Rusak").reduce((s,x)=>s+x.qty,0);
-        const pic=PICS_DATA.find(x=>x.unit===l.unit);
-        return `<tr>
+    <div class="search-bar" style="gap:10px;flex-wrap:wrap">
+      <input class="search-input" id="lap-search" placeholder="🔍 Cari nama ruangan, gedung, unit..." oninput="filterTable(this,'tbl-laporan')" style="min-width:200px"/>
+      ${isSuperAdmin()?`<select class="fi-sm" id="lap-unit" onchange="filterLaporan()" style="min-width:150px">
+        <option value="">Semua Unit</option>
+        ${UNITS.map(u=>`<option>${u}</option>`).join("")}
+      </select>`:""}
+    </div>
+    <div class="tbl-wrap"><table id="tbl-laporan">
+      <thead><tr><th>#</th><th>Nama Ruangan</th><th>Gedung</th><th>Unit</th><th>PIC</th><th>Total</th><th>Baik</th><th>Perbaikan</th><th>Rusak</th><th>PDF</th></tr></thead>
+      <tbody>${all.map((l,i)=>{
+        const ri = roomItems(l.id);
+        const q  = ri.reduce((s,x)=>s+x.qty,0);
+        const b  = ri.filter(x=>x.kondisi==="Baik").reduce((s,x)=>s+x.qty,0);
+        const p  = ri.filter(x=>x.kondisi==="Perbaikan").reduce((s,x)=>s+x.qty,0);
+        const r  = ri.filter(x=>x.kondisi==="Rusak").reduce((s,x)=>s+x.qty,0);
+        const pic= PICS_DATA.find(x=>x.unit===l.unit);
+        return `<tr data-unit="${l.unit}">
           <td class="mono">${i+1}</td>
-          <td style="font-weight:600">${l.nama}</td>
+          <td style="font-weight:600">${l.nama_ruangan||l.nama||""}</td>
           <td style="color:var(--text2)">${l.gedung}</td>
           <td><span class="badge b-purple">${l.unit}</span></td>
           <td style="font-size:12px;color:var(--text2)">${pic?pic.nama.split(",")[0]:"—"}</td>
-          <td style="font-weight:700">${q||"—"}</td>
-          <td style="color:#34D399">${b||"—"}</td>
-          <td style="color:#FB923C">${p||"—"}</td>
-          <td style="color:#F87171">${r||"—"}</td>
-          <td><button class="btn btn-ghost btn-sm" onclick="toast('DBR ${l.nama} dicetak!')">📄 DBR</button></td>
+          <td style="font-weight:700;text-align:center">${q||"—"}</td>
+          <td style="color:#34D399;text-align:center">${b||"—"}</td>
+          <td style="color:#FB923C;text-align:center">${p||"—"}</td>
+          <td style="color:#F87171;text-align:center">${r||"—"}</td>
+          <td><button class="btn btn-primary btn-sm" onclick="cetakPDF(${JSON.stringify(l).replace(/"/g,'&quot;')})">📄 PDF</button></td>
         </tr>`;
       }).join("")}</tbody>
     </table></div>
   </div>`;
+}
+
+function filterLaporan() {
+  const unit = document.getElementById("lap-unit")?.value || "";
+  const search = document.getElementById("lap-search")?.value.toLowerCase() || "";
+  const rows = document.querySelectorAll("#tbl-laporan tbody tr");
+  rows.forEach(tr => {
+    const matchUnit = !unit || tr.dataset.unit === unit;
+    const matchSearch = !search || tr.textContent.toLowerCase().includes(search);
+    tr.style.display = matchUnit && matchSearch ? "" : "none";
+  });
 }
 
 // ══════════════════════════════════════════════════════
@@ -1435,6 +1465,325 @@ async function selectRoom(room) {
   }
 }
 
+
+// ── FILTER TABLE ─────────────────────────────────────────────
+function filterTable(input, tableId) {
+  const q = input.value.toLowerCase();
+  document.querySelectorAll("#" + tableId + " tbody tr").forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+// ── MASTER MODAL ──────────────────────────────────────────────
+let _mmType = null;
+let _mmData = null;
+
+const MM_FORMS = {
+  barang: (d) => `
+    <div class="fg"><label>Kode Barang</label>
+      <input id="mm-kode" value="${d?.kode||""}" placeholder="BRG-055" ${d?"readonly":""} style="${d?"opacity:.5":""}"/></div>
+    <div class="fg"><label>Nama Barang *</label>
+      <input id="mm-nama" value="${d?.nama||""}" placeholder="Nama barang"/></div>
+    <div class="fg"><label>Satuan</label>
+      <input id="mm-satuan" value="${d?.satuan||"Unit"}" placeholder="Unit"/></div>`,
+
+  lokasi: (d) => `
+    <div class="fg"><label>Kode Ruangan</label>
+      <input id="mm-kode" value="${d?.kode_ruangan||""}" placeholder="TRB-074" ${d?"readonly":""} style="${d?"opacity:.5":""}"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg"><label>Gedung *</label><input id="mm-gedung" value="${d?.gedung||""}" placeholder="Tarbiyah"/></div>
+      <div class="fg"><label>Lantai *</label><input id="mm-lantai" value="${d?.lantai||""}" placeholder="Lantai 1"/></div>
+    </div>
+    <div class="fg"><label>Nama Ruangan *</label>
+      <input id="mm-nama" value="${d?.nama_ruangan||d?.nama||""}" placeholder="Ruang Kelas"/></div>
+    <div class="fg"><label>Unit / Fakultas *</label>
+      <select id="mm-unit">
+        ${["Rektorat","Kampus 1","Fak. Syariah","Pascasarjana","Perpustakaan","FEBI","Fak. Ushuludin","Mahad","Fak. Tarbiyah"]
+          .map(u=>`<option ${(d?.unit===u)?"selected":""}>${u}</option>`).join("")}
+      </select>
+    </div>`,
+
+  pic: (d) => `
+    <div class="fg"><label>NIP *</label><input id="mm-nip" value="${d?.nip||""}" placeholder="197001012000031001"/></div>
+    <div class="fg"><label>Nama Lengkap *</label><input id="mm-nama" value="${d?.nama||""}" placeholder="Dr. H. Ahmad, M.Ag"/></div>
+    <div class="fg"><label>Jabatan</label><input id="mm-jabatan" value="${d?.jabatan||""}" placeholder="Kasub Bag Umum"/></div>
+    <div class="fg"><label>Unit / Fakultas *</label>
+      <select id="mm-unit">
+        ${["Rektorat","Kampus 1","Fak. Syariah","Pascasarjana","Perpustakaan","FEBI","Fak. Ushuludin","Mahad","Fak. Tarbiyah"]
+          .map(u=>`<option ${(d?.unit===u)?"selected":""}>${u}</option>`).join("")}
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg"><label>No. HP</label><input id="mm-hp" value="${d?.no_hp||""}" placeholder="08123456789"/></div>
+      <div class="fg"><label>Status</label>
+        <select id="mm-status"><option ${d?.status!=="Nonaktif"?"selected":""}>Aktif</option><option ${d?.status==="Nonaktif"?"selected":""}>Nonaktif</option></select>
+      </div>
+    </div>`,
+
+  user: (d) => `
+    <div class="fg"><label>NIP *</label><input id="mm-nip" value="${d?.nip||""}" placeholder="197001012000031001"/></div>
+    <div class="fg"><label>Nama Lengkap *</label><input id="mm-nama" value="${d?.nama||""}" placeholder="Nama lengkap"/></div>
+    <div class="fg"><label>Username *</label><input id="mm-username" value="${d?.username||""}" placeholder="admin.syariah" ${d?"readonly":""} style="${d?"opacity:.5":""}"/></div>
+    ${!d?`<div class="fg"><label>Password *</label><input id="mm-password" type="password" placeholder="Min. 6 karakter"/></div>`:""}
+    <div class="fg"><label>Jabatan</label><input id="mm-jabatan" value="${d?.jabatan||""}" placeholder="Admin Inventaris"/></div>
+    <div class="fg"><label>Role *</label>
+      <select id="mm-role">
+        <option value="superadmin" ${d?.role==="superadmin"?"selected":""}>Super Admin (Bagian Umum)</option>
+        <option value="admin_fakultas" ${d?.role==="admin_fakultas"?"selected":""}>Admin Fakultas</option>
+      </select>
+    </div>
+    <div class="fg"><label>Unit / Fakultas *</label>
+      <select id="mm-unit">
+        <option value="Bagian Umum" ${d?.unit==="Bagian Umum"?"selected":""}>Bagian Umum</option>
+        ${["Rektorat","Kampus 1","Fak. Syariah","Pascasarjana","Perpustakaan","FEBI","Fak. Ushuludin","Mahad","Fak. Tarbiyah"]
+          .map(u=>`<option ${(d?.unit===u)?"selected":""}>${u}</option>`).join("")}
+      </select>
+    </div>
+    <div class="fg"><label>Status</label>
+      <select id="mm-status"><option ${d?.status!=="Nonaktif"?"selected":""}>Aktif</option><option ${d?.status==="Nonaktif"?"selected":""}>Nonaktif</option></select>
+    </div>`,
+};
+
+function mmOpen(type, data) {
+  _mmType = type;
+  _mmData = data;
+  const titles = {barang:"Barang",lokasi:"Ruangan",pic:"PIC / Kasub Bag",user:"User"};
+  document.getElementById("mm-title").textContent = (data ? "Edit " : "Tambah ") + (titles[type]||type);
+  document.getElementById("mm-body").innerHTML = MM_FORMS[type]?.(data) || "";
+  document.getElementById("master-modal").style.display = "block";
+}
+
+function closeMasterModal() {
+  document.getElementById("master-modal").style.display = "none";
+  _mmType = null; _mmData = null;
+}
+
+async function mmSimpan() {
+  const btn = document.getElementById("mm-submit");
+  btn.textContent = "Menyimpan..."; btn.disabled = true;
+  try {
+    if (_mmType === "barang") {
+      const body = {
+        kode: document.getElementById("mm-kode").value.trim(),
+        nama: document.getElementById("mm-nama").value.trim(),
+        satuan: document.getElementById("mm-satuan").value.trim() || "Unit",
+      };
+      if (!body.nama) throw new Error("Nama barang wajib diisi");
+      if (_mmData) {
+        await sbPatch("master_barang", _mmData.id, {nama:body.nama, satuan:body.satuan});
+      } else {
+        if (!body.kode) throw new Error("Kode barang wajib diisi");
+        await sbPost("master_barang", body);
+      }
+
+    } else if (_mmType === "lokasi") {
+      const body = {
+        kode_ruangan: document.getElementById("mm-kode").value.trim(),
+        gedung:       document.getElementById("mm-gedung").value.trim(),
+        lantai:       document.getElementById("mm-lantai").value.trim(),
+        nama_ruangan: document.getElementById("mm-nama").value.trim(),
+        unit:         document.getElementById("mm-unit").value,
+      };
+      if (!body.nama_ruangan || !body.gedung) throw new Error("Nama ruangan & gedung wajib diisi");
+      if (_mmData) {
+        await sbPatch("master_lokasi", _mmData.id, {gedung:body.gedung,lantai:body.lantai,nama_ruangan:body.nama_ruangan,unit:body.unit});
+      } else {
+        if (!body.kode_ruangan) throw new Error("Kode ruangan wajib diisi");
+        await sbPost("master_lokasi", body);
+      }
+
+    } else if (_mmType === "pic") {
+      const body = {
+        nip:     document.getElementById("mm-nip").value.trim(),
+        nama:    document.getElementById("mm-nama").value.trim(),
+        jabatan: document.getElementById("mm-jabatan").value.trim(),
+        unit:    document.getElementById("mm-unit").value,
+        no_hp:   document.getElementById("mm-hp").value.trim(),
+        status:  document.getElementById("mm-status").value,
+      };
+      if (!body.nip || !body.nama) throw new Error("NIP dan nama wajib diisi");
+      if (_mmData) {
+        await sbPatch("master_pic", _mmData.id, body);
+      } else {
+        await sbPost("master_pic", body);
+      }
+
+    } else if (_mmType === "user") {
+      const pwd = document.getElementById("mm-password")?.value;
+      const body = {
+        nip:      document.getElementById("mm-nip").value.trim(),
+        nama:     document.getElementById("mm-nama").value.trim(),
+        username: document.getElementById("mm-username").value.trim(),
+        jabatan:  document.getElementById("mm-jabatan").value.trim(),
+        role:     document.getElementById("mm-role").value,
+        unit:     document.getElementById("mm-unit").value,
+        status:   document.getElementById("mm-status").value,
+      };
+      if (!body.nip || !body.nama || !body.username) throw new Error("NIP, nama, username wajib diisi");
+      if (!_mmData && pwd) body.password_hash = await sha256(pwd);
+      if (_mmData) {
+        await sbPatch("users", _mmData.id, {nama:body.nama,jabatan:body.jabatan,role:body.role,unit:body.unit,status:body.status});
+      } else {
+        await sbPost("users", body);
+      }
+    }
+
+    closeMasterModal();
+    await loadMasterData();
+    render();
+    toast("Data berhasil disimpan!");
+  } catch(e) {
+    toast(e.message || "Gagal menyimpan", "red");
+  } finally {
+    btn.textContent = "Simpan"; btn.disabled = false;
+  }
+}
+
+async function mmDelete(table, idVal, idCol) {
+  if (!confirm("Yakin hapus data ini?")) return;
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/${table}?${idCol}=eq.${idVal}`, {
+      method: "DELETE",
+      headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}
+    });
+    if (!res.ok) throw new Error(await res.text());
+    await loadMasterData();
+    render();
+    toast("Data berhasil dihapus.");
+  } catch(e) {
+    toast("Gagal hapus: " + e.message, "red");
+  }
+}
+
+async function mmDeleteUser(id, username) {
+  if (username === currentUser?.username) { toast("Tidak bisa hapus akun sendiri!", "red"); return; }
+  if (!confirm(`Nonaktifkan user "${username}"?`)) return;
+  try {
+    await sbPatch("users", id, {status:"Nonaktif"});
+    await loadMasterData();
+    render();
+    toast("User dinonaktifkan.");
+  } catch(e) {
+    toast("Gagal: " + e.message, "red");
+  }
+}
+
+// ── PDF GENERATOR ─────────────────────────────────────────────
+async function cetakPDF(lokasi) {
+  // Load data barang ruangan kalau belum ada
+  const kode = lokasi.kode_ruangan;
+  if (!ITEMS[lokasi.id] || ITEMS[lokasi.id].length === 0) {
+    try {
+      const rows = await sbGet("dbr_data", {kode_ruangan:`eq.${kode}`,select:"*",order:"created_at"});
+      ITEMS[lokasi.id] = (rows||[]).map(r=>({id:r.id,nama:r.nama_barang,qty:r.qty,kondisi:r.kondisi,diinput_oleh:r.diinput_oleh,updated_at:r.updated_at?.split("T")[0]||""}));
+    } catch(e) { ITEMS[lokasi.id] = []; }
+  }
+
+  const items = ITEMS[lokasi.id] || [];
+  const pic   = PICS_DATA.find(p => p.unit === lokasi.unit);
+  const namaRuangan = lokasi.nama_ruangan || lokasi.nama || "";
+  const tgl   = new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+
+  const rows = items.map((item,i) => `
+    <tr>
+      <td style="text-align:center">${i+1}</td>
+      <td>${item.nama}</td>
+      <td style="text-align:center">${item.qty}</td>
+      <td style="text-align:center">Unit</td>
+      <td style="text-align:center"><span style="color:${item.kondisi==="Baik"?"green":item.kondisi==="Perbaikan"?"orange":"red"}">${item.kondisi}</span></td>
+      <td>${item.diinput_oleh||""}</td>
+    </tr>`).join("");
+
+  const win = window.open("","_blank");
+  win.document.write(`<!DOCTYPE html><html lang="id"><head>
+    <meta charset="UTF-8"/>
+    <title>DBR - ${namaRuangan}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Arial,sans-serif;font-size:12px;color:#000;padding:20px}
+      .kop{display:flex;align-items:center;gap:16px;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:16px}
+      .kop-logo{width:70px;height:70px;border:2px solid #000;display:flex;align-items:center;justify-content:center;font-size:10px;color:#555;text-align:center;flex-shrink:0}
+      .kop-text{flex:1;text-align:center}
+      .kop-text h1{font-size:15px;font-weight:bold;margin-bottom:2px}
+      .kop-text h2{font-size:13px;font-weight:bold;margin-bottom:2px}
+      .kop-text p{font-size:10px;color:#333}
+      .title{text-align:center;font-size:14px;font-weight:bold;margin:12px 0 4px;text-transform:uppercase;text-decoration:underline}
+      .info{margin:10px 0;font-size:11px}
+      .info table{border-collapse:collapse}
+      .info td{padding:2px 8px 2px 0;vertical-align:top}
+      .info td:nth-child(2){padding:2px 12px}
+      table.barang{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}
+      table.barang th{background:#ddd;border:1px solid #000;padding:5px 8px;text-align:center;font-weight:bold}
+      table.barang td{border:1px solid #000;padding:4px 8px;vertical-align:middle}
+      table.barang tbody tr:nth-child(even){background:#f9f9f9}
+      .ttd{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:32px;font-size:11px}
+      .ttd-box{text-align:center}
+      .ttd-box .garis{margin-top:52px;border-top:1px solid #000;padding-top:4px;font-weight:bold}
+      .ttd-box .nip{font-size:10px;color:#333}
+      .total-row td{font-weight:bold;background:#eee}
+      @media print{body{padding:10px}button{display:none}}
+    </style>
+  </head><body>
+    <div class="kop">
+      <div class="kop-logo">LOGO<br/>UIN<br/>KEDIRI</div>
+      <div class="kop-text">
+        <h1>UNIVERSITAS ISLAM NEGERI ABDURRAHMAN WAHID KEDIRI</h1>
+        <h2>DAFTAR BARANG RUANGAN (DBR)</h2>
+        <p>Jl. Sunan Ampel No.7, Ngronggo, Kec. Kota, Kota Kediri, Jawa Timur 64127</p>
+      </div>
+    </div>
+
+    <div class="title">Daftar Barang Ruangan</div>
+
+    <div class="info"><table>
+      <tr><td>Nama Ruangan</td><td>:</td><td><strong>${namaRuangan}</strong></td></tr>
+      <tr><td>Gedung</td><td>:</td><td>${lokasi.gedung}</td></tr>
+      <tr><td>Unit / Fakultas</td><td>:</td><td>${lokasi.unit}</td></tr>
+      <tr><td>Tahun</td><td>:</td><td>${new Date().getFullYear()}</td></tr>
+    </table></div>
+
+    <table class="barang">
+      <thead><tr>
+        <th style="width:35px">No.</th>
+        <th>Nama Barang</th>
+        <th style="width:50px">Qty</th>
+        <th style="width:50px">Satuan</th>
+        <th style="width:80px">Kondisi</th>
+        <th style="width:120px">Dicatat Oleh</th>
+      </tr></thead>
+      <tbody>
+        ${rows || `<tr><td colspan="6" style="text-align:center;padding:20px;color:#999">Belum ada data barang</td></tr>`}
+        <tr class="total-row">
+          <td colspan="2" style="text-align:right">TOTAL</td>
+          <td style="text-align:center">${items.reduce((s,x)=>s+x.qty,0)}</td>
+          <td colspan="3"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="ttd">
+      <div class="ttd-box">
+        <div>Mengetahui,</div>
+        <div>Penanggung Jawab</div>
+        <div class="garis">${pic?.nama || "................................"}</div>
+        <div class="nip">NIP. ${pic?.nip || "................................"}</div>
+      </div>
+      <div class="ttd-box">
+        <div>Kediri, ${tgl}</div>
+        <div>Yang Membuat,</div>
+        <div class="garis">${currentUser?.nama?.replace(/,.*$/,"").trim() || "................................"}</div>
+        <div class="nip">NIP. ${currentUser?.nip || "................................"}</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;text-align:center">
+      <button onclick="window.print()" style="padding:8px 24px;background:#1D4ED8;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Print / Save PDF</button>
+    </div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+}
+
 // ── SIDEBAR TOGGLE ────────────────────────────────────
 function toggleSidebar() {
   const sb  = document.querySelector(".sidebar");
@@ -1529,41 +1878,63 @@ function applyUserUI() {
 })();
 </script>
 
-<!-- ══════════════════════════════════════════════════════
-     FORM TAMBAH BARANG — statis, tidak ikut render()
-     ══════════════════════════════════════════════════════ -->
+<!-- MODAL TAMBAH BARANG -->
 <div id="add-panel" style="display:none">
-  <div id="add-panel-backdrop" onclick="closeAddPanel()" 
-    style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;animation:fadeInFast .15s"></div>
-  <div style="
-    position:fixed;bottom:0;left:220px;right:0;z-index:201;
-    background:#1E293B;border-top:2px solid #3B82F6;
-    padding:16px 28px;display:flex;gap:12px;align-items:flex-end;
-    box-shadow:0 -8px 32px rgba(0,0,0,.4);
-    animation:slideUpPanel .2s cubic-bezier(.34,1.2,.64,1);
-  ">
-    <div style="flex:1;display:flex;flex-direction:column;gap:4px;position:relative">
-      <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Nama Barang</div>
-      <input id="ap-nama" class="fi-sm" placeholder="Cari nama barang..." autocomplete="off"
-        oninput="apOnInput(this.value)"
-        onblur="setTimeout(()=>{const l=document.getElementById('ap-list');if(l)l.style.display='none'},150)"
-        style="width:100%"/>
-      <div id="ap-list" class="ac-list" style="display:none;bottom:100%;top:auto;margin-bottom:4px;margin-top:0"></div>
+  <div class="modal-backdrop" onclick="closeAddPanel()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">
+        <span>➕ Tambah Barang</span>
+        <button class="modal-close" onclick="closeAddPanel()">✕</button>
+      </div>
+      <div class="fg">
+        <label>Nama Barang</label>
+        <div style="position:relative">
+          <input id="ap-nama" placeholder="Ketik nama barang..." autocomplete="off"
+            oninput="apOnInput(this.value)"
+            onblur="setTimeout(()=>{const l=document.getElementById('ap-list');if(l)l.style.display='none'},150)"/>
+          <div id="ap-list" class="ac-list" style="display:none"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="fg">
+          <label>Jumlah (Qty)</label>
+          <input id="ap-qty" type="number" value="1" min="1"/>
+        </div>
+        <div class="fg">
+          <label>Kondisi</label>
+          <select id="ap-cond">
+            <option>Baik</option>
+            <option>Perbaikan</option>
+            <option>Rusak</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Keterangan (opsional)</label>
+        <input id="ap-ket" placeholder="Catatan tambahan..."/>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeAddPanel()">Batal</button>
+        <button class="btn btn-green" onclick="apSimpan()" id="ap-submit-btn">+ Simpan</button>
+      </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:4px">
-      <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Qty</div>
-      <input id="ap-qty" class="fi-sm" type="number" value="1" min="1" style="width:80px"/>
+  </div>
+</div>
+
+<!-- MODAL UNIVERSAL (tambah/edit master data) -->
+<div id="master-modal" style="display:none">
+  <div class="modal-backdrop" onclick="closeMasterModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">
+        <span id="mm-title">Form</span>
+        <button class="modal-close" onclick="closeMasterModal()">✕</button>
+      </div>
+      <div id="mm-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeMasterModal()">Batal</button>
+        <button class="btn btn-primary" onclick="mmSimpan()" id="mm-submit">Simpan</button>
+      </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:4px">
-      <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Kondisi</div>
-      <select id="ap-cond" class="fi-sm" style="width:120px">
-        <option>Baik</option>
-        <option>Perbaikan</option>
-        <option>Rusak</option>
-      </select>
-    </div>
-    <button class="btn btn-green" onclick="apSimpan()" style="padding:9px 20px">+ Simpan</button>
-    <button class="btn btn-ghost" onclick="closeAddPanel()" style="padding:9px 16px">✕</button>
   </div>
 </div>
 
