@@ -1753,7 +1753,7 @@ async function cetakPDF(lokasi) {
     <div class="kop">
       <img src="images/uin.png" alt="UIN Kediri" style="width:70px;height:70px;object-fit:contain"/>
       <div class="kop-text">
-        <h1>UNIVERSITAS ISLAM NEGERI ABDURRAHMAN WAHID KEDIRI</h1>
+        <h1>UNIVERSITAS ISLAM NEGERI<br/>SYEKH WASIL KEDIRI</h1>
         <h2>DAFTAR BARANG RUANGAN (DBR)</h2>
         <p>Jl. Sunan Ampel No.7, Ngronggo, Kec. Kota, Kota Kediri, Jawa Timur 64127</p>
       </div>
@@ -1787,8 +1787,8 @@ async function cetakPDF(lokasi) {
       </tbody>
     </table>
 
-    <div class="ttd" style="grid-template-columns:1fr;max-width:300px">
-      <div class="ttd-box">
+    <div style="display:flex;justify-content:flex-end;margin-top:32px">
+      <div class="ttd-box" style="text-align:center;min-width:260px">
         <div>Kediri, ${tgl}</div>
         <div>Penanggung Jawab,</div>
         <div class="garis">${pic?.nama || "................................"}</div>
