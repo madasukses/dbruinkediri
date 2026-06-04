@@ -189,6 +189,24 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .denied{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:20px;color:#F87171;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:10px}
 
 select option{background:#1E293B;color:#F8FAFC}
+
+/* ── SMOOTH TRANSITIONS ── */
+.content{transition:opacity .15s ease}
+.content.fading{opacity:0}
+.card{animation:fadeIn .2s ease}
+.kpi{animation:fadeIn .25s ease}
+.list-item{transition:border-color .12s,background .12s,transform .1s}
+.list-item:hover{transform:translateX(2px)}
+.sb-item{transition:background .12s,color .12s}
+.btn{transition:background .15s,transform .12s,box-shadow .15s,opacity .12s}
+.btn:active{transform:scale(.97)}
+.badge{transition:background .15s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInFast{from{opacity:0}to{opacity:1}}
+.add-form{animation:fadeIn .2s ease}
+.ac-list{animation:fadeIn .15s ease}
+.toast{animation:slideUp .25s cubic-bezier(.34,1.56,.64,1)}
+table tbody tr{animation:fadeInFast .15s ease}
 </style>
 </head>
 <body>
@@ -370,10 +388,28 @@ let ITEMS = {
 // ══════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════
-let currentRole = "superadmin";
-let currentUnit = null;
-let currentUser = {nama:"Super Admin", nip:""};
-let page = "dashboard";
+// ── SESSION (persist ke localStorage) ───────────────────────
+function loadSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem("simdbr_session") || "null");
+    if (s && s.currentRole) return s;
+  } catch(_) {}
+  return null;
+}
+function saveSession() {
+  localStorage.setItem("simdbr_session", JSON.stringify({
+    currentRole, currentUnit, currentUser, page
+  }));
+}
+function clearSession() {
+  localStorage.removeItem("simdbr_session");
+}
+
+const _sess = loadSession();
+let currentRole = _sess ? _sess.currentRole : null;
+let currentUnit = _sess ? _sess.currentUnit : null;
+let currentUser = _sess ? _sess.currentUser : null;
+let page        = _sess ? (_sess.page || "dashboard") : "dashboard";
 let selGedung = null, selRoom = null;
 let editingId = null;
 let addOpen = false;
@@ -439,42 +475,19 @@ function doLogin() {
   currentUnit = ROLE_UNIT[role];
 
   // Set user display
-  if(isSuperAdmin()) {
-    currentUser = USERS_SUPERADMIN[0];
-    document.getElementById("sb-uname").textContent = "Bag. Umum";
-    document.getElementById("sb-urole").textContent = "Super Admin";
-    document.getElementById("sb-unit").style.display = "none";
-  } else {
-    const adminData = ADMIN_FAKULTAS.find(a=>a.role===role);
-    currentUser = adminData || {nama: uname, nip:""};
-    document.getElementById("sb-uname").textContent = currentUser.nama.split(",")[0];
-    document.getElementById("sb-urole").textContent = "Admin Fakultas";
-    document.getElementById("sb-unit").textContent = currentUnit;
-    document.getElementById("sb-unit").style.display = "block";
-  }
-  document.getElementById("sb-av").textContent = (currentUser.nama||uname)[0].toUpperCase();
-
-  // Hide master menu items for admin fakultas
-  if(!isSuperAdmin()) {
-    ["nav-m-bmn","nav-m-user"].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.style.display = "none";
-    });
-  } else {
-    ["nav-m-bmn","nav-m-user"].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.style.display = "";
-    });
-  }
+  applyUserUI();
 
   document.getElementById("login-page").style.display = "none";
   document.getElementById("app").style.display = "flex";
   document.getElementById("topbar-date").textContent = new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
   page = "dashboard"; selGedung=null; selRoom=null;
+  saveSession();
   render();
 }
 
 function doLogout() {
+  clearSession();
+  currentRole = null; currentUnit = null; currentUser = null;
   document.getElementById("app").style.display = "none";
   document.getElementById("login-page").style.display = "flex";
 }
@@ -483,6 +496,7 @@ function doLogout() {
 // NAV
 // ══════════════════════════════════════════════════════
 function nav(p) {
+  if(page === p) return; // no re-render kalau sama
   page = p; selGedung=null; selRoom=null; addOpen=false; editingId=null;
   document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("active"));
   document.querySelectorAll(".sb-sub").forEach(el=>el.classList.remove("active"));
@@ -496,6 +510,7 @@ function nav(p) {
     document.getElementById("nav-transaksi").classList.add("active");
     document.getElementById("nav-"+p)?.classList.add("active");
   }
+  saveSession();
   render();
 }
 
@@ -509,6 +524,15 @@ function toggleSub(id) {
 // ══════════════════════════════════════════════════════
 function render() {
   const el = document.getElementById("content");
+  el.classList.add("fading");
+  setTimeout(() => {
+    el.classList.remove("fading");
+    _doRender(el);
+  }, 80);
+}
+
+function _doRender(el) {
+  el = el || document.getElementById("content");
   const pages = {
     dashboard: renderDashboard,
     "m-barang": renderMBarang,
@@ -1100,8 +1124,63 @@ async function apiPost(action, body={}) {
   return json.data;
 }
 
-window.selRoom = null;
+window.selRoom   = null;
 window.editingId = null;
+
+// ── Apply user UI (sidebar info) ─────────────────────────────
+function applyUserUI() {
+  if (!currentUser || !currentRole) return;
+  const isSA = currentRole === "superadmin";
+  const isBMN = currentRole === "bmn";
+
+  document.getElementById("sb-uname").textContent =
+    isSA ? "Bag. Umum" : currentUser.nama.split(",")[0];
+  document.getElementById("sb-urole").textContent =
+    isSA ? "Super Admin" : isBMN ? "BMN — Bag. Umum" : "Admin Fakultas";
+  document.getElementById("sb-av").textContent =
+    (currentUser.nama || "A")[0].toUpperCase();
+
+  const unitEl = document.getElementById("sb-unit");
+  if (!isSA && !isBMN) {
+    unitEl.textContent = currentUnit || "";
+    unitEl.style.display = "block";
+  } else {
+    unitEl.style.display = "none";
+  }
+
+  // Sembunyikan menu superadmin-only untuk non-superadmin
+  ["nav-m-bmn","nav-m-user"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (isSA ? "" : "none");
+  });
+}
+
+// ── Auto-restore session saat refresh ────────────────────────
+(function() {
+  if (currentRole && currentUser) {
+    document.getElementById("login-page").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+    document.getElementById("topbar-date").textContent =
+      new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
+    applyUserUI();
+
+    // Restore active nav
+    document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("active"));
+    if (page === "dashboard") document.getElementById("nav-dashboard")?.classList.add("active");
+    if (page === "laporan")   document.getElementById("nav-laporan")?.classList.add("active");
+    if (page.startsWith("m-")) {
+      document.getElementById("sb-master-item")?.classList.add("active");
+      document.getElementById("sub-master").style.display = "block";
+      document.getElementById("nav-"+page)?.classList.add("active");
+    }
+    if (page.startsWith("t-")) {
+      document.getElementById("nav-transaksi")?.classList.add("active");
+      document.getElementById("sub-transaksi").style.display = "block";
+      document.getElementById("nav-"+page)?.classList.add("active");
+    }
+    render();
+  }
+})();
 </script>
 </body>
 </html>
