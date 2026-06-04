@@ -872,13 +872,9 @@ function renderInput() {
           <div class="inp-lbl">Nama Barang</div>
           <div class="ac-wrap">
             <input class="fi-sm" id="ac-input" placeholder="Cari nama barang..." value="${newItem.nama}"
-              oninput="onAcInput(this.value)" autocomplete="off"/>
-            ${suggestions.length>0?`
-            <div class="ac-list" id="ac-list">
-              ${suggestions.map(s=>`<div class="ac-item" onclick="selectAc('${s.replace(/'/g,"\\'")}')">
-                ${s.replace(new RegExp(newItem.nama.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), m=>`<mark>${m}</mark>`)}
-              </div>`).join("")}
-            </div>`:""}
+              oninput="onAcInput(this.value)" autocomplete="off" 
+              onblur="setTimeout(()=>{const l=document.getElementById('ac-list');if(l)l.style.display='none'},150)"/>
+            <div class="ac-list" id="ac-list" style="display:none"></div>
           </div>
         </div>
         <div class="inp-wrap">
@@ -966,35 +962,49 @@ function renderInput() {
 // ══════════════════════════════════════════════════════
 function onAcInput(val) {
   newItem.nama = val;
-  render();
-  // refocus
-  setTimeout(()=>{
-    const el=document.getElementById("ac-input");
-    if(el){el.focus();el.value=val;el.setSelectionRange(val.length,val.length);}
-  },10);
+  // Update suggestion list langsung tanpa render() penuh
+  const list = document.getElementById("ac-list");
+  if (!list) return;
+  if (!val || val.length < 1) { list.innerHTML = ""; list.style.display = "none"; return; }
+  const suggestions = MASTER_BARANG.filter(b => b.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
+  if (suggestions.length === 0) { list.innerHTML = ""; list.style.display = "none"; return; }
+  const re = new RegExp(val.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  list.innerHTML = suggestions.map(s =>
+    `<div class="ac-item" onmousedown="selectAc('${s.replace(/'/g, "\\'")}')">${s.replace(re, m => `<mark>${m}</mark>`)}</div>`
+  ).join("");
+  list.style.display = "block";
 }
 function selectAc(val) {
   newItem.nama = val;
-  addOpen = true;
-  render();
-  setTimeout(()=>{
-    const el=document.getElementById("add-qty");
-    if(el) el.focus();
-  },50);
+  // Isi input langsung, tutup dropdown
+  const inp = document.getElementById("ac-input");
+  if (inp) { inp.value = val; }
+  const list = document.getElementById("ac-list");
+  if (list) { list.style.display = "none"; }
+  // Fokus ke qty
+  setTimeout(() => {
+    const qty = document.getElementById("add-qty");
+    if (qty) qty.focus();
+  }, 30);
 }
 
 // ══════════════════════════════════════════════════════
 // CRUD ITEMS
 // ══════════════════════════════════════════════════════
 function doAdd(roomId) {
-  const nama = document.getElementById("ac-input")?.value || newItem.nama;
-  const qty = +document.getElementById("add-qty")?.value || 1;
+  const nama    = (document.getElementById("ac-input")?.value || "").trim();
+  const qty     = +document.getElementById("add-qty")?.value || 1;
   const kondisi = document.getElementById("add-cond")?.value || "Baik";
-  if(!nama.trim()) { toast("Nama barang harus diisi!", "red"); return; }
-  if(!ITEMS[roomId]) ITEMS[roomId]=[];
-  ITEMS[roomId].push({id:Date.now(), nama, qty, kondisi, updatedBy: currentUser.nama.split(",")[0], updatedAt: now()});
-  newItem = {nama:"", qty:1, kondisi:"Baik"};
-  addOpen = false;
+  if (!nama) { toast("Nama barang harus diisi!", "red"); return; }
+  if (!["Baik","Perbaikan","Rusak"].includes(kondisi)) { toast("Kondisi tidak valid!", "red"); return; }
+  if (!ITEMS[roomId]) ITEMS[roomId] = [];
+  ITEMS[roomId].push({
+    id: Date.now(), nama, qty, kondisi,
+    updatedBy: currentUser ? currentUser.nama.split(",")[0] : "—",
+    updatedAt: now()
+  });
+  newItem  = {nama:"", qty:1, kondisi:"Baik"};
+  addOpen  = false;
   render();
   toast("Barang berhasil ditambahkan!");
 }
