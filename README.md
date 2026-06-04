@@ -1,50 +1,112 @@
-# SIM-DBR — Sistem Informasi Manajemen Daftar Barang Ruangan
+# 📋 SIM-DBR
+### Sistem Informasi Manajemen Daftar Barang Ruangan
+**UIN Syekh Wasil Kediri**
 
-Aplikasi inventaris aset ruangan berbasis web. Frontend statis (HTML/CSS/JS) di-host via GitHub Pages atau Vercel, backend menggunakan Google Apps Script sebagai API, dan data tersimpan di Google Sheets.
+---
+
+## Tentang
+
+SIM-DBR adalah aplikasi web untuk mengelola inventaris aset barang ruangan (DBR) di lingkungan UIN Syekh Wasil Kediri. Dibangun sebagai aplikasi single-page yang ringan, bisa diakses dari browser maupun HP.
+
+---
+
+## Fitur
+
+- **Dashboard** — ringkasan total aset, kondisi baik/perbaikan/rusak per unit
+- **Master Data** — kelola barang, lokasi ruangan, PIC/Kasub Bag, dan user
+- **Input DBR** — input dan verifikasi kondisi barang per ruangan
+- **Laporan** — rekap per ruangan dengan export PDF berkop UIN
+- **Multi role** — Super Admin (Bagian Umum) dan Admin Fakultas
+- **Responsive** — bisa dipakai di HP maupun desktop
+- **Dark/Light mode**
+
+---
 
 ## Stack
 
-| Layer    | Teknologi              |
-|----------|------------------------|
-| Frontend | HTML + Vanilla JS      |
-| Backend  | Google Apps Script     |
-| Database | Google Sheets          |
-| Hosting  | GitHub Pages / Vercel  |
+| Layer | Teknologi |
+|-------|-----------|
+| Frontend | HTML + Vanilla JS (single file) |
+| Database | Supabase (PostgreSQL) |
+| Hosting | GitHub Pages |
+
+---
+
+## Role & Akses
+
+| Role | Siapa | Akses |
+|------|-------|-------|
+| `superadmin` | Bagian Umum | Penuh — semua unit, kelola user |
+| `admin_fakultas` | Admin per unit | Edit data unit sendiri saja |
+
+---
 
 ## Struktur Project
 
 ```
 sim-dbr/
-├── index.html              ← Aplikasi utama (single file)
-├── apps-script/
-│   ├── Code.gs             ← Backend API (deploy ke Apps Script)
-│   └── appsscript.json     ← Manifest Apps Script
-├── docs/
-│   └── SETUP.md            ← Panduan setup lengkap
+├── index.html              ← Aplikasi utama
+├── images/
+│   └── uin.png             ← Logo UIN Syekh Wasil Kediri
+├── supabase_schema.sql     ← Schema database Supabase
 └── README.md
 ```
 
-## Role & Akses
+---
 
-| Role             | Siapa              | Akses                          |
-|------------------|--------------------|-------------------------------|
-| `superadmin`     | Kepala Bag. Umum   | Penuh semua unit + kelola user |
-| `bmn`            | Staf Bag. Umum     | Lihat & laporan semua unit     |
-| `admin_fakultas` | Admin per unit     | Edit data unit sendiri saja    |
+## Setup
 
-## Setup Cepat
+### 1. Supabase
 
-Lihat **[docs/SETUP.md](docs/SETUP.md)** untuk panduan lengkap.
+1. Buat project di [supabase.com](https://supabase.com)
+2. Buka **SQL Editor** → paste isi `supabase_schema.sql` → Run
+3. Catat **Project URL** dan **Anon Key** dari Settings → API
 
-### Ringkasan
+### 2. Konfigurasi
 
-1. Import `SIM_DBR_GoogleSheet_Template.xlsx` ke Google Drive
-2. Buka **Extensions → Apps Script**, paste isi `apps-script/Code.gs`
-3. Isi `SS_ID` di Code.gs dengan Spreadsheet ID
-4. Deploy sebagai Web App → salin URL
-5. Isi `API_URL` di `index.html` dengan URL tadi
-6. Push ke GitHub → aktifkan GitHub Pages
+Buka `index.html`, cari dan ganti:
+
+```js
+const SB_URL = "https://your-project.supabase.co";
+const SB_KEY = "your-anon-key";
+```
+
+### 3. Deploy
+
+Push ke GitHub → aktifkan **GitHub Pages** di Settings → Pages → Source: `main`
+
+### 4. Login Pertama
+
+Default user sudah tersedia di database (`supabase_schema.sql`):
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | *(kosong, isi saat login pertama)* | Super Admin |
+
+---
+
+## Penggunaan
+
+### Alur Input DBR
+
+```
+Login → DBR → Input / Verifikasi
+→ Pilih Gedung → Pilih Ruangan
+→ Tambah Barang (nama autocomplete dari master)
+→ Isi Qty & Kondisi (Baik / Perbaikan / Rusak)
+→ Simpan
+```
+
+### Cetak PDF DBR
+
+```
+Laporan → cari ruangan → klik tombol PDF
+→ halaman cetak terbuka otomatis
+→ Save as PDF atau Print
+```
+
+---
 
 ## Lisensi
 
-MIT
+Untuk penggunaan internal UIN Syekh Wasil Kediri.
