@@ -309,8 +309,7 @@ table tbody tr{animation:fadeInFast .15s ease}
       <div class="sb-sub" id="nav-m-barang" onclick="nav('m-barang')"><span class="sb-dot"></span>Barang</div>
       <div class="sb-sub" id="nav-m-lokasi" onclick="nav('m-lokasi')"><span class="sb-dot"></span>Lokasi</div>
       <div class="sb-sub" id="nav-m-pic" onclick="nav('m-pic')"><span class="sb-dot"></span>PIC / Kasub Bag</div>
-      <div class="sb-sub" id="nav-m-bmn" onclick="nav('m-bmn')"><span class="sb-dot"></span>Anggota BMN</div>
-      <div class="sb-sub" id="nav-m-user" onclick="nav('m-user')"><span class="sb-dot"></span>Users</div>
+            <div class="sb-sub" id="nav-m-user" onclick="nav('m-user')"><span class="sb-dot"></span>Users</div>
     </div>
     <div class="sb-sec">DBR</div>
     <div class="sb-item" id="nav-dbr" onclick="toggleSub('dbr')"><span class="ico">📝</span><span class="sb-text">DBR</span></div>
@@ -598,7 +597,6 @@ function _doRender(el) {
     "m-barang": renderMBarang,
     "m-lokasi": renderMLokasi,
     "m-pic": renderMPic,
-    "m-bmn": renderMBmn,
     "m-user": renderMUser,
     "t-input": renderInput,
     "t-pindah": renderPindah,
@@ -1843,7 +1841,7 @@ function applyUserUI() {
   }
 
   // Sembunyikan menu superadmin-only untuk non-superadmin
-  ["nav-m-bmn","nav-m-user"].forEach(id => {
+  ["nav-m-user"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = (isSA ? "" : "none");
   });
