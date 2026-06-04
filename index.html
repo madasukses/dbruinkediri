@@ -476,13 +476,13 @@ let editItem = {};
 const isSuperAdmin = () => currentRole === "superadmin";
 const totalOf = (field, filter) => {
   return Object.entries(ITEMS).flatMap(([id,arr])=>{
-    const room = LOKASI.find(l=>l.id===+id);
+    const room = LOKASI_DATA.find(l=>l.id===+id) || LOKASI.find(l=>l.id===+id);
     if(filter && room && room.unit !== filter) return [];
     return arr;
   }).reduce((s,i)=>s+(field==="qty"?i.qty:0),0);
 };
 const countCond = (cond, unit) => Object.entries(ITEMS).flatMap(([id,arr])=>{
-  const room=LOKASI.find(l=>l.id===+id);
+  const room=LOKASI_DATA.find(l=>l.id===+id) || LOKASI.find(l=>l.id===+id);
   if(unit && room && room.unit!==unit) return [];
   return arr;
 }).filter(i=>i.kondisi===cond).reduce((s,i)=>s+i.qty,0);
@@ -658,7 +658,7 @@ function renderDashboard() {
   const gRusak = countCond("Rusak", unit);
 
   const barData = (unit ? [unit] : UNITS).map(u => {
-    const ids = LOKASI.filter(l=>l.unit===u).map(l=>l.id);
+    const ids = LOKASI_DATA.filter(l=>l.unit===u).map(l=>l.id);
     const q = ids.reduce((s,id)=>s+roomItems(id).reduce((a,i)=>a+i.qty,0),0);
     const b = ids.reduce((s,id)=>s+roomItems(id).filter(i=>i.kondisi==="Baik").reduce((a,i)=>a+i.qty,0),0);
     const p = ids.reduce((s,id)=>s+roomItems(id).filter(i=>i.kondisi==="Perbaikan").reduce((a,i)=>a+i.qty,0),0);
@@ -724,7 +724,7 @@ function renderDashboard() {
     <div class="tbl-wrap"><table>
       <thead><tr><th>Unit</th><th>Ruangan Terisi</th><th>Total Aset</th><th>Baik</th><th>Perbaikan</th><th>Rusak</th><th>% Baik</th></tr></thead>
       <tbody>${(unit?[unit]:UNITS).map(u=>{
-        const ids=LOKASI.filter(l=>l.unit===u).map(l=>l.id);
+        const ids=LOKASI_DATA.filter(l=>l.unit===u).map(l=>l.id);
         const q=ids.reduce((s,id)=>s+roomItems(id).reduce((a,i)=>a+i.qty,0),0);
         const b=ids.reduce((s,id)=>s+roomItems(id).filter(i=>i.kondisi==="Baik").reduce((a,i)=>a+i.qty,0),0);
         const p2=ids.reduce((s,id)=>s+roomItems(id).filter(i=>i.kondisi==="Perbaikan").reduce((a,i)=>a+i.qty,0),0);
@@ -892,9 +892,9 @@ function renderMUser() {
 function renderInput() {
   setBread(["DBR","Input / Verifikasi"]);
   const gedungs = [...new Set(
-    LOKASI.filter(l => !currentUnit || l.unit===currentUnit).map(l=>l.gedung)
+    LOKASI_DATA.filter(l => !currentUnit || l.unit===currentUnit).map(l=>l.gedung)
   )];
-  const rooms = selGedung ? LOKASI.filter(l=>l.gedung===selGedung && (!currentUnit||l.unit===currentUnit)) : [];
+  const rooms = selGedung ? LOKASI_DATA.filter(l=>l.gedung===selGedung && (!currentUnit||l.unit===currentUnit)) : [];
 
   if(selRoom) {
     const ri = roomItems(selRoom.id);
@@ -948,8 +948,8 @@ function renderInput() {
     return `
     <div class="ph">
       <div class="ph-left">
-        <div class="ph-title">📦 ${selRoom.nama}</div>
-        <div class="ph-sub">${selRoom.gedung} · ${selRoom.lantai} · ${selRoom.unit}</div>
+        <div class="ph-title">📦 ${selRoom.nama_ruangan||selRoom.nama||""}</div>
+        <div class="ph-sub">${selRoom.gedung} · ${selRoom.lantai} · ${selRoom.unit||""}</div>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost btn-sm" onclick="selRoom=null;render()">← Kembali</button>
@@ -1002,7 +1002,7 @@ function renderInput() {
       <div class="card-head"><div class="card-title">🏢 Gedung</div></div>
       <div class="card-body" style="padding:10px">
         ${gedungs.map(g=>{
-          const cnt=LOKASI.filter(l=>l.gedung===g&&(!currentUnit||l.unit===currentUnit)).length;
+          const cnt=LOKASI_DATA.filter(l=>l.gedung===g&&(!currentUnit||l.unit===currentUnit)).length;
           return `<div class="list-item ${selGedung===g?"sel":""}" onclick="selGedung='${g}';render()">
             <div><div class="li-name">${g}</div><div class="li-meta">${cnt} ruangan</div></div>
             ${selGedung===g?'<span style="color:var(--accent)">›</span>':""}
@@ -1021,7 +1021,7 @@ function renderInput() {
               const hasRusak=ri.some(i=>i.kondisi==="Rusak");
               const hasPerbaikan=ri.some(i=>i.kondisi==="Perbaikan");
               return `<div class="list-item" onclick="selectRoom(${JSON.stringify(r).replace(/'/g,'\'').replace(/"/g,'&quot;')})">
-                <div><div class="li-name">${r.nama}</div><div class="li-meta">${r.lantai}</div></div>
+                <div><div class="li-name">${r.nama_ruangan||r.nama||""}</div><div class="li-meta">${r.lantai}</div></div>
                 <div style="display:flex;gap:5px">
                   <span class="badge b-blue">${q} unit</span>
                   ${hasRusak?`<span class="badge b-red">Rusak</span>`:""}
@@ -1084,8 +1084,8 @@ function doAdd(roomId) {
   render();
 
   // Simpan ke Supabase
-  const lokasiRow = LOKASI_DATA.find(l => l.id === roomId) || LOKASI.find(l => l.id === roomId);
-  const kodeRuangan = lokasiRow?.kode_ruangan;
+  const kodeRuangan = selRoom?.kode_ruangan
+    || LOKASI_DATA.find(l => l.id == roomId)?.kode_ruangan;
   if (!kodeRuangan) { toast("Kode ruangan tidak ditemukan!", "red"); return; }
 
   sbPost("dbr_data", {
@@ -1148,7 +1148,7 @@ function deleteItem(roomId, itemId) {
 // ══════════════════════════════════════════════════════
 function renderPindah() {
   setBread(["DBR","Pindah Barang"]);
-  const filtered = LOKASI.filter(l=>!currentUnit||l.unit===currentUnit);
+  const filtered = LOKASI_DATA.filter(l=>!currentUnit||l.unit===currentUnit);
   const opts = filtered.map(l=>`<option value="${l.id}">${l.nama} — ${l.gedung}</option>`).join("");
   return `
   <div class="ph"><div class="ph-left"><div class="ph-title">Pindah Barang</div><div class="ph-sub">Transfer aset antar ruangan</div></div></div>
@@ -1414,8 +1414,9 @@ async function apSimpan() {
   if (!nama)      { toast("Nama barang harus diisi!", "red"); return; }
   if (!_apRoomId) { toast("Room tidak dikenali!", "red"); return; }
 
-  const lok = LOKASI_DATA.find(l => l.id === _apRoomId) || LOKASI.find(l=>l.id===_apRoomId);
-  const kodeRuangan = lok?.kode_ruangan;
+  // Ambil kode_ruangan dari selRoom (sudah di-set saat selectRoom)
+  const kodeRuangan = selRoom?.kode_ruangan
+    || LOKASI_DATA.find(l => l.id == _apRoomId)?.kode_ruangan;
   if (!kodeRuangan) { toast("Kode ruangan tidak ditemukan!", "red"); return; }
 
   const btn = document.querySelector("#add-panel .btn-green");
@@ -1454,33 +1455,38 @@ async function selectRoom(room) {
   selRoom = room;
   editingId = null;
   addOpen = false;
-  render(); // render dulu dengan loading state
+  render();
 
-  // Load dari Supabase
-  const lok = LOKASI_DATA.find(l => l.id === room.id) || room;
-  const kode = lok.kode_ruangan;
-  if (kode) {
-    try {
-      const rows = await sbGet("dbr_data", {
-        kode_ruangan: `eq.${kode}`,
-        select: "*",
-        order: "created_at"
-      });
-      // Map ke format ITEMS pakai id numerik dari room
-      ITEMS[room.id] = (rows || []).map(r => ({
-        id:           r.id,
-        nama:         r.nama_barang,
-        qty:          r.qty,
-        kondisi:      r.kondisi,
-        diinput_oleh: r.diinput_oleh,
-        updated_at:   r.updated_at?.split("T")[0] || "",
-        keterangan:   r.keterangan || "",
-        kode_ruangan: r.kode_ruangan,
-      }));
-      render();
-    } catch(e) {
-      console.warn("Load DBR error:", e.message);
-    }
+  // Ambil kode_ruangan — bisa dari room langsung atau dari LOKASI_DATA
+  const kode = room.kode_ruangan
+    || LOKASI_DATA.find(l => l.id == room.id)?.kode_ruangan;
+
+  if (!kode) { console.warn("kode_ruangan tidak ditemukan untuk room:", room); return; }
+
+  // Simpan kode ke selRoom supaya fungsi lain bisa akses
+  selRoom.kode_ruangan = kode;
+
+  try {
+    const rows = await sbGet("dbr_data", {
+      kode_ruangan: `eq.${kode}`,
+      select: "*",
+      order: "created_at"
+    });
+    // Cache pakai kode_ruangan sebagai key (lebih reliable)
+    ITEMS[room.id] = (rows || []).map(r => ({
+      id:           r.id,
+      nama:         r.nama_barang,
+      qty:          r.qty,
+      kondisi:      r.kondisi,
+      diinput_oleh: r.diinput_oleh,
+      updated_at:   r.updated_at?.split("T")[0] || "",
+      keterangan:   r.keterangan || "",
+      kode_ruangan: r.kode_ruangan,
+    }));
+    render();
+  } catch(e) {
+    console.warn("Load DBR error:", e.message);
+    toast("Gagal load data: " + e.message, "red");
   }
 }
 
