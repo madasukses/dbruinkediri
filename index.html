@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SIM-DBR</title>
+<title>SIM-DBR — Sistem Inventaris Barang Ruangan</title>
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1256,7 +1257,7 @@ async function sbLogin(username, password) {
   if (!rows || rows.length === 0) throw new Error("Username tidak ditemukan");
   const user = rows[0];
   // Kalau password_hash kosong (setup awal), langsung set
-  if (!user.password_hash) {
+  if (!user.password_hash || user.password_hash.trim() === '') {
     await fetch(`${SB_URL}/rest/v1/users?username=eq.${username}`, {
       method: "PATCH",
       headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json"},
