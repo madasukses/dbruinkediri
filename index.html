@@ -77,11 +77,21 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
 .sidebar.collapsed .sb-text{opacity:0;pointer-events:none}
 /* Mobile overlay */
 @media(max-width:768px){
-  .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:150;transform:translateX(0)}
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;z-index:150;
+    transform:translateX(-220px);/* default hidden di mobile */
+    width:220px;min-width:220px;
+  }
+  .sidebar.open{transform:translateX(0)}
   .sidebar.collapsed{transform:translateX(-220px);width:220px;min-width:220px}
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149}
   .sidebar-overlay.visible{display:block}
-  .main{width:100%}
+  .main{width:100%;min-width:0}
+  /* Tombol close di dalam sidebar, mobile only */
+  .sb-close{display:flex}
+}
+@media(min-width:769px){
+  .sb-close{display:none}
 }
 .sb-brand{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
 .sb-brand-icon{width:30px;height:30px;border-radius:7px;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
@@ -300,6 +310,10 @@ table tbody tr{animation:fadeInFast .15s ease}
         <div class="sb-brand-icon">📋</div>
         <div class="sb-text"><div class="sb-brand-name">SIM-DBR</div><div class="sb-brand-ver">v2025</div></div>
       </div>
+      <button class="sb-close" onclick="toggleSidebar()" style="
+        background:none;border:none;color:var(--text3);font-size:20px;
+        cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;
+      ">✕</button>
     </div>
     <div class="sb-sec">Utama</div>
     <div class="sb-item active" id="nav-dashboard" onclick="nav('dashboard')"><span class="ico">📊</span><span class="sb-text">Dashboard</span></div>
@@ -555,8 +569,15 @@ function doLogout() {
 // NAV
 // ══════════════════════════════════════════════════════
 function nav(p) {
-  if(page === p) return; // no re-render kalau sama
+  if(page === p) return;
   page = p; selGedung=null; selRoom=null; addOpen=false; editingId=null;
+  // Auto close sidebar di mobile setelah pilih menu
+  if (window.innerWidth <= 768) {
+    const sb = document.querySelector(".sidebar");
+    const ov = document.getElementById("sidebar-overlay");
+    sb?.classList.remove("open");
+    ov?.classList.remove("visible");
+  }
   document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("active"));
   document.querySelectorAll(".sb-sub").forEach(el=>el.classList.remove("active"));
   if(p==="dashboard") document.getElementById("nav-dashboard").classList.add("active");
@@ -1779,12 +1800,19 @@ async function cetakPDF(lokasi) {
 
 // ── SIDEBAR TOGGLE ────────────────────────────────────
 function toggleSidebar() {
-  const sb  = document.querySelector(".sidebar");
-  const ov  = document.getElementById("sidebar-overlay");
+  const sb     = document.querySelector(".sidebar");
+  const ov     = document.getElementById("sidebar-overlay");
   const mobile = window.innerWidth <= 768;
-  sb.classList.toggle("collapsed");
-  if (mobile && ov) ov.classList.toggle("visible", !sb.classList.contains("collapsed"));
-  localStorage.setItem("simdbr_sidebar", sb.classList.contains("collapsed") ? "0" : "1");
+
+  if (mobile) {
+    // Mobile: toggle class "open"
+    const isOpen = sb.classList.toggle("open");
+    if (ov) ov.classList.toggle("visible", isOpen);
+  } else {
+    // Desktop: toggle class "collapsed"
+    sb.classList.toggle("collapsed");
+    localStorage.setItem("simdbr_sidebar", sb.classList.contains("collapsed") ? "0" : "1");
+  }
 }
 
 // ── THEME TOGGLE ──────────────────────────────────────
@@ -1804,12 +1832,16 @@ function toggleTheme() {
     const btn = document.getElementById("theme-btn");
     if (btn) btn.textContent = "☀️";
   }
-  // Sidebar (desktop only)
+  // Sidebar preference (desktop only — mobile default hidden)
   if (window.innerWidth > 768) {
     const sidebarPref = localStorage.getItem("simdbr_sidebar");
     if (sidebarPref === "0") {
       document.querySelector(".sidebar")?.classList.add("collapsed");
     }
+  }
+  // Mobile: pastikan sidebar tertutup saat load
+  if (window.innerWidth <= 768) {
+    document.querySelector(".sidebar")?.classList.remove("open","collapsed");
   }
 })();
 
