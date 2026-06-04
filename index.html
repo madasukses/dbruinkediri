@@ -15,6 +15,25 @@
   --border:rgba(255,255,255,0.08);--surface:rgba(255,255,255,0.04);
   --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
 }
+/* ── LIGHT MODE ── */
+body.light{
+  --navy:#F1F5F9;--navy2:#FFFFFF;--navy3:#E2E8F0;
+  --accent:#2563EB;--accent2:#1D4ED8;
+  --green:#059669;--red:#DC2626;--amber:#D97706;--purple:#7C3AED;--orange:#EA580C;
+  --text:#0F172A;--text2:#475569;--text3:#94A3B8;
+  --border:rgba(0,0,0,0.08);--surface:rgba(0,0,0,0.03);
+}
+body.light .login-box{box-shadow:0 8px 32px rgba(0,0,0,.12)}
+body.light .fi{background:#F8FAFC;color:#0F172A}
+body.light .fi-sm{background:#F8FAFC;color:#0F172A}
+body.light .ac-list{background:#FFFFFF;border-color:#2563EB}
+body.light .ac-item:hover{background:rgba(37,99,235,.08)}
+body.light .cond-select{background:#F8FAFC;color:#0F172A}
+body.light .edit-fi{background:#F8FAFC;color:#0F172A}
+body.light th{color:#64748B}
+body.light .sb-brand-ver{color:#94A3B8}
+body.light #add-panel > div:last-child{background:#FFFFFF;border-top-color:#2563EB}
+body.light .toast{background:#FFFFFF;color:#059669}
 html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(--font);font-size:14px}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--navy3);border-radius:4px}
@@ -46,7 +65,23 @@ html,body{height:100%;background:var(--navy);color:var(--text);font-family:var(-
 #app{display:none;height:100vh;overflow:hidden;flex-direction:row}
 
 /* SIDEBAR */
-.sidebar{width:220px;min-width:220px;background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar{
+  width:220px;min-width:220px;background:var(--navy2);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;
+  transition:width .25s ease,min-width .25s ease,transform .25s ease;
+  position:relative;z-index:50;flex-shrink:0;
+}
+.sidebar.collapsed{width:0;min-width:0;overflow:hidden}
+.sb-text{transition:opacity .2s ease}
+.sidebar.collapsed .sb-text{opacity:0;pointer-events:none}
+/* Mobile overlay */
+@media(max-width:768px){
+  .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:150;transform:translateX(0)}
+  .sidebar.collapsed{transform:translateX(-220px);width:220px;min-width:220px}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149}
+  .sidebar-overlay.visible{display:block}
+  .main{width:100%}
+}
 .sb-brand{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
 .sb-brand-icon{width:30px;height:30px;border-radius:7px;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 .sb-brand-name{font-size:14px;font-weight:800;line-height:1}
@@ -190,6 +225,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 select option{background:#1E293B;color:#F8FAFC}
 
+@keyframes slideUpPanel{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
 /* ── SMOOTH TRANSITIONS ── */
 .content{transition:opacity .15s ease}
 .content.fading{opacity:0}
@@ -251,12 +287,14 @@ table tbody tr{animation:fadeInFast .15s ease}
 <!-- APP -->
 <div id="app" style="display:none;flex-direction:row">
   <div class="sidebar">
-    <div class="sb-brand">
-      <div class="sb-brand-icon">📋</div>
-      <div><div class="sb-brand-name">SIM-DBR</div><div class="sb-brand-ver">v2025</div></div>
+    <div class="sb-brand" style="justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div class="sb-brand-icon">📋</div>
+        <div class="sb-text"><div class="sb-brand-name">SIM-DBR</div><div class="sb-brand-ver">v2025</div></div>
+      </div>
     </div>
     <div class="sb-sec">Utama</div>
-    <div class="sb-item active" id="nav-dashboard" onclick="nav('dashboard')"><span class="ico">📊</span>Dashboard</div>
+    <div class="sb-item active" id="nav-dashboard" onclick="nav('dashboard')"><span class="ico">📊</span><span class="sb-text">Dashboard</span></div>
     <div id="sb-master-sec" class="sb-sec">Master Data</div>
     <div id="sb-master-item" class="sb-item" onclick="toggleSub('master')"><span class="ico">🗂️</span>Master Data</div>
     <div id="sub-master" style="display:none">
@@ -266,14 +304,14 @@ table tbody tr{animation:fadeInFast .15s ease}
       <div class="sb-sub" id="nav-m-bmn" onclick="nav('m-bmn')"><span class="sb-dot"></span>Anggota BMN</div>
       <div class="sb-sub" id="nav-m-user" onclick="nav('m-user')"><span class="sb-dot"></span>Users</div>
     </div>
-    <div class="sb-sec">Transaksi</div>
-    <div class="sb-item" id="nav-transaksi" onclick="toggleSub('transaksi')"><span class="ico">📝</span>Transaksi</div>
-    <div id="sub-transaksi" style="display:none">
+    <div class="sb-sec">DBR</div>
+    <div class="sb-item" id="nav-dbr" onclick="toggleSub('dbr')"><span class="ico">📝</span><span class="sb-text">DBR</span></div>
+    <div id="sub-dbr" style="display:none">
       <div class="sb-sub" id="nav-t-input" onclick="nav('t-input')"><span class="sb-dot"></span>Input / Verifikasi</div>
       <div class="sb-sub" id="nav-t-pindah" onclick="nav('t-pindah')"><span class="sb-dot"></span>Pindah Barang</div>
     </div>
     <div class="sb-sec">Laporan</div>
-    <div class="sb-item" id="nav-laporan" onclick="nav('laporan')"><span class="ico">📄</span>Laporan DBR</div>
+    <div class="sb-item" id="nav-laporan" onclick="nav('laporan')"><span class="ico">📄</span><span class="sb-text">Laporan DBR</span></div>
     <div class="sb-bottom">
       <div class="sb-user">
         <div class="sb-av" id="sb-av">A</div>
@@ -289,11 +327,24 @@ table tbody tr{animation:fadeInFast .15s ease}
 
   <div class="main">
     <div class="topbar">
-      <div class="breadcrumb" id="breadcrumb"><span class="cur">Dashboard</span></div>
-      <div style="display:flex;align-items:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="toggleSidebar()" style="
+          background:var(--surface);border:1px solid var(--border);border-radius:7px;
+          width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+          cursor:pointer;font-size:16px;color:var(--text2);flex-shrink:0;transition:all .15s
+        " title="Toggle Sidebar">☰</button>
+        <div class="breadcrumb" id="breadcrumb"><span class="cur">Dashboard</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
         <span id="topbar-date" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
+        <button onclick="toggleTheme()" id="theme-btn" style="
+          background:var(--surface);border:1px solid var(--border);border-radius:7px;
+          width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+          cursor:pointer;font-size:15px;transition:all .15s
+        " title="Toggle tema">🌙</button>
       </div>
     </div>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div class="content" id="content"></div>
   </div>
 </div>
@@ -398,11 +449,14 @@ function loadSession() {
 }
 function saveSession() {
   localStorage.setItem("simdbr_session", JSON.stringify({
-    currentRole, currentUnit, currentUser, page
+    currentRole, currentUnit, currentUser, page, token: AUTH_TOKEN
   }));
+  if (AUTH_TOKEN) localStorage.setItem("simdbr_token", AUTH_TOKEN);
 }
 function clearSession() {
   localStorage.removeItem("simdbr_session");
+  localStorage.removeItem("simdbr_token");
+  AUTH_TOKEN = "";
 }
 
 const _sess = loadSession();
@@ -410,6 +464,7 @@ let currentRole = _sess ? _sess.currentRole : null;
 let currentUnit = _sess ? _sess.currentUnit : null;
 let currentUser = _sess ? _sess.currentUser : null;
 let page        = _sess ? (_sess.page || "dashboard") : "dashboard";
+// AUTH_TOKEN sudah di-restore di deklarasi API_URL block
 let selGedung = null, selRoom = null;
 let editingId = null;
 let addOpen = false;
@@ -483,6 +538,7 @@ function doLogin() {
   page = "dashboard"; selGedung=null; selRoom=null;
   saveSession();
   render();
+  loadMasterData();
 }
 
 function doLogout() {
@@ -507,7 +563,7 @@ function nav(p) {
     document.getElementById("nav-"+p)?.classList.add("active");
   }
   if(p.startsWith("t-")) {
-    document.getElementById("nav-transaksi").classList.add("active");
+    document.getElementById("nav-dbr").classList.add("active");
     document.getElementById("nav-"+p)?.classList.add("active");
   }
   saveSession();
@@ -547,12 +603,32 @@ function _doRender(el) {
   el.innerHTML = (pages[page] || renderDashboard)();
 }
 
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5  && h < 12) return "Selamat Pagi";
+  if (h >= 12 && h < 15) return "Selamat Siang";
+  if (h >= 15 && h < 18) return "Selamat Sore";
+  return "Selamat Malam";
+}
+function getFirstName() {
+  if (!currentUser || !currentUser.nama) return "Admin";
+  // Ambil nama depan sebelum koma atau spasi kedua
+  const nama = currentUser.nama.replace(/,.*$/, "").trim(); // hapus gelar belakang koma
+  const parts = nama.split(" ");
+  // Skip "Dr.", "H.", "Hj.", "Drs."
+  const skip = ["dr.","h.","hj.","drs.","prof.","ir.","dra."];
+  const clean = parts.filter(p => !skip.includes(p.toLowerCase()));
+  return clean[0] || parts[0] || "Admin";
+}
 // ══════════════════════════════════════════════════════
 // DASHBOARD
 // ══════════════════════════════════════════════════════
 function renderDashboard() {
   setBread(["Dashboard"]);
   const unit = currentUnit;
+  const greeting = getGreeting();
+  const firstName = getFirstName();
   const gQty = totalOf("qty", unit);
   const gBaik = countCond("Baik", unit);
   const gServis = countCond("Perbaikan", unit);
@@ -579,10 +655,10 @@ function renderDashboard() {
 
   const circ=2*Math.PI*54, pctB=pct(gBaik,gQty);
   return `
-  <div class="ph">
-    <div class="ph-left">
-      <div class="ph-title">Dashboard ${unit?`— ${unit}`:""}</div>
-      <div class="ph-sub">Ringkasan inventaris aset · ${new Date().getFullYear()}</div>
+  <div class="ph" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:20px">
+    <div style="font-size:22px;font-weight:800">${greeting}, <span style="color:var(--accent)">${firstName}</span> 👋</div>
+    <div style="font-size:13px;color:var(--text2)">
+      ${unit ? `Inventaris ${unit}` : "Inventaris seluruh unit"} · ${new Date().toLocaleDateString("id-ID",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})}
     </div>
   </div>
   <div class="kpi-row">
@@ -675,7 +751,7 @@ function renderMBarang() {
 // ══════════════════════════════════════════════════════
 function renderMLokasi() {
   setBread(["Master Data","Lokasi"]);
-  const filtered = currentUnit ? LOKASI.filter(l=>l.unit===currentUnit) : LOKASI;
+  const filtered = currentUnit ? LOKASI_DATA.filter(l=>l.unit===currentUnit) : LOKASI_DATA;
   return `
   <div class="ph"><div class="ph-left"><div class="ph-title">Master Lokasi</div><div class="ph-sub">${filtered.length} ruangan${currentUnit?" di "+currentUnit:""} (sample)</div></div>
     ${isSuperAdmin()?`<button class="btn btn-primary btn-sm">+ Tambah Ruangan</button>`:""}
@@ -700,7 +776,7 @@ function renderMLokasi() {
 // ══════════════════════════════════════════════════════
 function renderMPic() {
   setBread(["Master Data","PIC / Kasub Bag"]);
-  const filtered = currentUnit ? PICS.filter(p=>p.unit===currentUnit) : PICS;
+  const filtered = currentUnit ? PICS_DATA.filter(p=>p.unit===currentUnit) : PICS_DATA;
   return `
   <div class="ph"><div class="ph-left"><div class="ph-title">Master PIC</div><div class="ph-sub">Tampil sebagai tanda tangan pada dokumen DBR</div></div>
     ${isSuperAdmin()?`<button class="btn btn-primary btn-sm">+ Tambah PIC</button>`:""}
@@ -764,7 +840,7 @@ function renderMUser() {
   <div class="card">
     <div class="tbl-wrap"><table>
       <thead><tr><th>#</th><th>NIP</th><th>Nama</th><th>Jabatan</th><th>Unit / Akses</th><th>Role</th><th>Aksi</th></tr></thead>
-      <tbody>${ADMIN_FAKULTAS.map((u,i)=>`<tr>
+      <tbody>${USERS_DATA.map((u,i)=>`<tr>
         <td class="mono">${i+1}</td>
         <td class="mono">${u.nip}</td>
         <td style="font-weight:600">${u.nama}</td>
@@ -784,7 +860,7 @@ function renderMUser() {
 // INPUT / VERIFIKASI — with autocomplete + edit
 // ══════════════════════════════════════════════════════
 function renderInput() {
-  setBread(["Transaksi","Input / Verifikasi"]);
+  setBread(["DBR","Input / Verifikasi"]);
   const gedungs = [...new Set(
     LOKASI.filter(l => !currentUnit || l.unit===currentUnit).map(l=>l.gedung)
   )];
@@ -796,7 +872,7 @@ function renderInput() {
     const tB = ri.filter(i=>i.kondisi==="Baik").reduce((s,i)=>s+i.qty,0);
     const tP = ri.filter(i=>i.kondisi==="Perbaikan").reduce((s,i)=>s+i.qty,0);
     const tR = ri.filter(i=>i.kondisi==="Rusak").reduce((s,i)=>s+i.qty,0);
-    const pic = PICS.find(p=>p.unit===selRoom.unit);
+    const pic = PICS_DATA.find(p=>p.unit===selRoom.unit);
 
     const rows = ri.map(item => {
       if(editingId === item.id) {
@@ -861,41 +937,12 @@ function renderInput() {
     <div class="card">
       <div class="card-head">
         <div class="card-title">Daftar Barang</div>
-        <button class="btn btn-ghost btn-sm" onclick="addOpen=!addOpen;render()">
-          ${addOpen?"✕ Tutup":"+ Tambah Barang"}
+        <button class="btn btn-ghost btn-sm" onclick="openAddPanel(selRoom.id)">
+          + Tambah Barang
         </button>
       </div>
 
-      ${addOpen ? `
-      <div class="add-row">
-        <div class="inp-wrap" style="position:relative">
-          <div class="inp-lbl">Nama Barang</div>
-          <div class="ac-wrap">
-            <input class="fi-sm" id="ac-input" placeholder="Cari nama barang..." value="${newItem.nama}"
-              oninput="onAcInput(this.value)" autocomplete="off" 
-              onblur="setTimeout(()=>{const l=document.getElementById('ac-list');if(l)l.style.display='none'},150)"/>
-            <div class="ac-list" id="ac-list" style="display:none"></div>
-          </div>
-        </div>
-        <div class="inp-wrap">
-          <div class="inp-lbl">Qty</div>
-          <input class="fi-sm" type="number" id="add-qty" value="${newItem.qty}" min="1" style="width:80px"/>
-        </div>
-        <div class="inp-wrap">
-          <div class="inp-lbl">Kondisi</div>
-          <select class="fi-sm" id="add-cond">
-            ${["Baik","Perbaikan","Rusak"].map(c=>`<option ${c===newItem.kondisi?"selected":""}>${c}</option>`).join("")}
-          </select>
-        </div>
-        <div class="inp-wrap">
-          <div class="inp-lbl" style="opacity:0">_</div>
-          <button class="btn btn-green btn-sm" onclick="doAdd(${selRoom.id})">+ Simpan</button>
-        </div>
-        <div class="inp-wrap">
-          <div class="inp-lbl" style="opacity:0">_</div>
-          <button class="btn btn-ghost btn-sm" onclick="addOpen=false;newItem={nama:'',qty:1,kondisi:'Baik'};render()">Batal</button>
-        </div>
-      </div>` : ""}
+
 
       <div class="tbl-wrap"><table>
         <thead><tr><th>#</th><th>Nama Barang</th><th>Qty</th><th>Kondisi</th><th>Diinput Oleh</th><th>Tgl Update</th><th>Aksi</th></tr></thead>
@@ -1037,7 +1084,7 @@ function deleteItem(roomId, itemId) {
 // PINDAH BARANG
 // ══════════════════════════════════════════════════════
 function renderPindah() {
-  setBread(["Transaksi","Pindah Barang"]);
+  setBread(["DBR","Pindah Barang"]);
   const filtered = LOKASI.filter(l=>!currentUnit||l.unit===currentUnit);
   const opts = filtered.map(l=>`<option value="${l.id}">${l.nama} — ${l.gedung}</option>`).join("");
   return `
@@ -1071,7 +1118,7 @@ function renderPindah() {
 // ══════════════════════════════════════════════════════
 function renderLaporan() {
   setBread(["Laporan DBR"]);
-  const filtered = currentUnit ? LOKASI.filter(l=>l.unit===currentUnit) : LOKASI;
+  const filtered = currentUnit ? LOKASI_DATA.filter(l=>l.unit===currentUnit) : LOKASI_DATA;
   return `
   <div class="ph">
     <div class="ph-left"><div class="ph-title">Laporan DBR</div><div class="ph-sub">Rekap inventaris per ruangan</div></div>
@@ -1090,7 +1137,7 @@ function renderLaporan() {
         const b=ri.filter(x=>x.kondisi==="Baik").reduce((s,x)=>s+x.qty,0);
         const p=ri.filter(x=>x.kondisi==="Perbaikan").reduce((s,x)=>s+x.qty,0);
         const r=ri.filter(x=>x.kondisi==="Rusak").reduce((s,x)=>s+x.qty,0);
-        const pic=PICS.find(x=>x.unit===l.unit);
+        const pic=PICS_DATA.find(x=>x.unit===l.unit);
         return `<tr>
           <td class="mono">${i+1}</td>
           <td style="font-weight:600">${l.nama}</td>
@@ -1114,7 +1161,44 @@ function renderLaporan() {
 
 // ── API CONFIG ───────────────────────────────────────────────────────────────
 const API_URL = "https://script.google.com/macros/s/AKfycbwY-e5LREglUWOGmIZoclhpJE49TD8B3nsD6Fznmt1iN-Zac71gFS24W7vvvQh0u0s11g/exec";
-let AUTH_TOKEN = localStorage.getItem("simdbr_token") || "";
+// AUTH_TOKEN: cek dari session dulu (lebih reliable), fallback ke simdbr_token
+let AUTH_TOKEN = (() => {
+  try {
+    const s = JSON.parse(localStorage.getItem("simdbr_session") || "null");
+    if (s && s.token) return s.token;
+  } catch(_) {}
+  return localStorage.getItem("simdbr_token") || "";
+})();
+
+// ── MASTER DATA (dari GSheet) ─────────────────────────
+// Awalnya pakai data lokal, di-replace setelah fetch berhasil
+let PICS_DATA    = [...PICS];    // akan di-overwrite dari GSheet
+let USERS_DATA   = [];           // akan di-overwrite dari GSheet
+let LOKASI_DATA  = [...LOKASI];  // akan di-overwrite dari GSheet
+
+async function loadMasterData() {
+  if (!AUTH_TOKEN) return;
+  try {
+    // Fetch paralel
+    const [picRes, lokasiRes] = await Promise.all([
+      apiGet("getMasterPic"),
+      apiGet("getMasterLokasi"),
+    ]);
+    if (picRes && picRes.length)    PICS_DATA   = picRes;
+    if (lokasiRes && lokasiRes.length) LOKASI_DATA = lokasiRes;
+
+    // Superadmin juga fetch users
+    if (currentRole === "superadmin") {
+      const usersRes = await apiGet("getUsers");
+      if (usersRes && usersRes.length) USERS_DATA = usersRes;
+    }
+
+    // Re-render kalau sudah di halaman yang relevan
+    if (["m-pic","m-lokasi","m-user","dashboard"].includes(page)) render();
+  } catch(e) {
+    console.warn("loadMasterData gagal, pakai data lokal:", e.message);
+  }
+}
 
 async function apiGet(action, params={}) {
   const qs = new URLSearchParams({action, token:AUTH_TOKEN, ...params});
@@ -1134,8 +1218,100 @@ async function apiPost(action, body={}) {
   return json.data;
 }
 
+// ══════════════════════════════════════════════════════
+// ADD PANEL — form statis, tidak ikut render()
+// ══════════════════════════════════════════════════════
+let _apRoomId = null;
+
+function openAddPanel(roomId) {
+  _apRoomId = roomId;
+  document.getElementById("ap-nama").value = "";
+  document.getElementById("ap-qty").value  = "1";
+  document.getElementById("ap-cond").value = "Baik";
+  document.getElementById("ap-list").style.display = "none";
+  document.getElementById("add-panel").style.display = "block";
+  setTimeout(() => document.getElementById("ap-nama").focus(), 100);
+}
+
+function closeAddPanel() {
+  document.getElementById("add-panel").style.display = "none";
+  _apRoomId = null;
+}
+
+function apOnInput(val) {
+  const list = document.getElementById("ap-list");
+  if (!val || val.length < 1) { list.innerHTML = ""; list.style.display = "none"; return; }
+  const sugg = MASTER_BARANG.filter(b => b.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
+  if (!sugg.length) { list.innerHTML = ""; list.style.display = "none"; return; }
+  const re = new RegExp(val.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  list.innerHTML = sugg.map(s =>
+    `<div class="ac-item" onmousedown="apSelect('${s.replace(/'/g, "\\'")}')">${s.replace(re, m => `<mark>${m}</mark>`)}</div>`
+  ).join("");
+  list.style.display = "block";
+}
+
+function apSelect(val) {
+  document.getElementById("ap-nama").value = val;
+  document.getElementById("ap-list").style.display = "none";
+  setTimeout(() => document.getElementById("ap-qty").focus(), 30);
+}
+
+function apSimpan() {
+  const nama    = document.getElementById("ap-nama").value.trim();
+  const qty     = +document.getElementById("ap-qty").value  || 1;
+  const kondisi = document.getElementById("ap-cond").value;
+  if (!nama)    { toast("Nama barang harus diisi!", "red"); return; }
+  if (!_apRoomId) { toast("Room tidak dikenali!", "red"); return; }
+  if (!ITEMS[_apRoomId]) ITEMS[_apRoomId] = [];
+  ITEMS[_apRoomId].push({
+    id: Date.now(), nama, qty, kondisi,
+    updatedBy: currentUser ? currentUser.nama.split(",")[0] : "—",
+    updatedAt: now()
+  });
+  closeAddPanel();
+  render();
+  toast("Barang berhasil ditambahkan!");
+}
+
 window.selRoom   = null;
 window.editingId = null;
+
+// ── SIDEBAR TOGGLE ────────────────────────────────────
+function toggleSidebar() {
+  const sb  = document.querySelector(".sidebar");
+  const ov  = document.getElementById("sidebar-overlay");
+  const mobile = window.innerWidth <= 768;
+  sb.classList.toggle("collapsed");
+  if (mobile && ov) ov.classList.toggle("visible", !sb.classList.contains("collapsed"));
+  localStorage.setItem("simdbr_sidebar", sb.classList.contains("collapsed") ? "0" : "1");
+}
+
+// ── THEME TOGGLE ──────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.body.classList.toggle("light");
+  localStorage.setItem("simdbr_theme", isLight ? "light" : "dark");
+  const btn = document.getElementById("theme-btn");
+  if (btn) btn.textContent = isLight ? "☀️" : "🌙";
+}
+
+// ── RESTORE THEME & SIDEBAR ───────────────────────────
+(function initPrefs() {
+  // Theme
+  const theme = localStorage.getItem("simdbr_theme");
+  if (theme === "light") {
+    document.body.classList.add("light");
+    const btn = document.getElementById("theme-btn");
+    if (btn) btn.textContent = "☀️";
+  }
+  // Sidebar (desktop only)
+  if (window.innerWidth > 768) {
+    const sidebarPref = localStorage.getItem("simdbr_sidebar");
+    if (sidebarPref === "0") {
+      document.querySelector(".sidebar")?.classList.add("collapsed");
+    }
+  }
+})();
+
 
 // ── Apply user UI (sidebar info) ─────────────────────────────
 function applyUserUI() {
@@ -1173,6 +1349,7 @@ function applyUserUI() {
     document.getElementById("topbar-date").textContent =
       new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"});
     applyUserUI();
+    loadMasterData();
 
     // Restore active nav
     document.querySelectorAll(".sb-item").forEach(el=>el.classList.remove("active"));
@@ -1184,13 +1361,52 @@ function applyUserUI() {
       document.getElementById("nav-"+page)?.classList.add("active");
     }
     if (page.startsWith("t-")) {
-      document.getElementById("nav-transaksi")?.classList.add("active");
-      document.getElementById("sub-transaksi").style.display = "block";
+      document.getElementById("nav-dbr")?.classList.add("active");
+      document.getElementById("sub-dbr").style.display = "block";
       document.getElementById("nav-"+page)?.classList.add("active");
     }
     render();
   }
 })();
 </script>
+
+<!-- ══════════════════════════════════════════════════════
+     FORM TAMBAH BARANG — statis, tidak ikut render()
+     ══════════════════════════════════════════════════════ -->
+<div id="add-panel" style="display:none">
+  <div id="add-panel-backdrop" onclick="closeAddPanel()" 
+    style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;animation:fadeInFast .15s"></div>
+  <div style="
+    position:fixed;bottom:0;left:220px;right:0;z-index:201;
+    background:#1E293B;border-top:2px solid #3B82F6;
+    padding:16px 28px;display:flex;gap:12px;align-items:flex-end;
+    box-shadow:0 -8px 32px rgba(0,0,0,.4);
+    animation:slideUpPanel .2s cubic-bezier(.34,1.2,.64,1);
+  ">
+    <div style="flex:1;display:flex;flex-direction:column;gap:4px;position:relative">
+      <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Nama Barang</div>
+      <input id="ap-nama" class="fi-sm" placeholder="Cari nama barang..." autocomplete="off"
+        oninput="apOnInput(this.value)"
+        onblur="setTimeout(()=>{const l=document.getElementById('ap-list');if(l)l.style.display='none'},150)"
+        style="width:100%"/>
+      <div id="ap-list" class="ac-list" style="display:none;bottom:100%;top:auto;margin-bottom:4px;margin-top:0"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Qty</div>
+      <input id="ap-qty" class="fi-sm" type="number" value="1" min="1" style="width:80px"/>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em">Kondisi</div>
+      <select id="ap-cond" class="fi-sm" style="width:120px">
+        <option>Baik</option>
+        <option>Perbaikan</option>
+        <option>Rusak</option>
+      </select>
+    </div>
+    <button class="btn btn-green" onclick="apSimpan()" style="padding:9px 20px">+ Simpan</button>
+    <button class="btn btn-ghost" onclick="closeAddPanel()" style="padding:9px 16px">✕</button>
+  </div>
+</div>
+
 </body>
 </html>
